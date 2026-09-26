@@ -72,10 +72,6 @@ export default function Gallery() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
-                  
-                  <span className="absolute top-4 left-4 text-[10px] font-mono uppercase tracking-widest bg-black/80 text-amber-300 font-bold px-3 py-1 rounded-full border border-white/10">
-                    {item.category}
-                  </span>
 
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs">
                     <div className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl">
@@ -124,10 +120,7 @@ export default function Gallery() {
                   className="w-full max-h-[65vh] sm:max-h-[75vh] object-contain rounded-2xl mb-3 sm:mb-4"
                 />
                 <div className="text-center p-2 sm:p-4">
-                  <span className="text-[10px] sm:text-xs uppercase font-mono text-amber-400 border border-amber-400/30 px-3 py-1 rounded-full">
-                    {activeImage.category}
-                  </span>
-                  <h3 className="font-sans text-lg sm:text-2xl font-bold text-white mt-3">
+                  <h3 className="font-sans text-lg sm:text-2xl font-bold text-white">
                     {activeImage.caption}
                   </h3>
                 </div>
