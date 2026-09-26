@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import { siteConfig } from '../config/siteConfig';
 
 export default function Navbar({ onOpenBooking }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -62,8 +63,13 @@ export default function Navbar({ onOpenBooking }) {
             ))}
           </div>
 
-          {/* Right Action Button */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Right Action Button & Signature */}
+          <div className="hidden md:flex items-center gap-5">
+            <img
+              src={siteConfig.artist.signatureImage}
+              alt="Muralidhar Shenoy Signature"
+              className="h-9 lg:h-11 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+            />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

@@ -1,4 +1,5 @@
 import heroBg from '../assets/hero/hero_background.png';
+import msSignature from '../assets/branding/ms_signature.png';
 
 export const heroContent = {
   name: "Muralidhar Shenoy",
@@ -6,5 +7,6 @@ export const heroContent = {
   tagline: "Playback Singer & Music Composer",
   subtitle: "Devotional, Light & Classical Vocal Performance",
   heroImage: heroBg,
+  signatureImage: msSignature,
   bookingButtonText: "Booking Enquiry",
 };

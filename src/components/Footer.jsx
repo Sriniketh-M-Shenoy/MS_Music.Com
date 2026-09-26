@@ -14,9 +14,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 pb-12 sm:pb-16 border-b border-white/10">
           
           <div className="sm:col-span-2 md:col-span-5 space-y-4">
-            <span className="font-sans text-xl sm:text-2xl font-extrabold tracking-tight text-white block">
-              MS
-            </span>
+            <img
+              src={siteConfig.artist.signatureImage}
+              alt="Muralidhar Shenoy Signature"
+              className="h-14 sm:h-18 w-auto object-contain -ml-2 opacity-95"
+            />
 
             <p className="text-xs text-gray-400 leading-relaxed max-w-sm">
               {siteConfig.artist.title}. Dedicated to preserving classical traditions and modern musical excellence.
