@@ -6,11 +6,11 @@
  * videos, concert schedules, gallery photos, and reviews here.
  */
 
-import heroBg from '../assets/images/hero_background.png';
-import picRedKurta from '../assets/images/pic_red_kurta.png';
-import picMicBlack from '../assets/images/pic_mic_black.png';
-import picSingingMic from '../assets/images/pic_singing_mic.png';
-import picTshirt from '../assets/images/pic_tshirt.png';
+import heroBg from '../assets/hero/hero_background.png';
+import picRedKurta from '../assets/about/pic_red_kurta.png';
+import picMicBlack from '../assets/gallery/pic_mic_black.png';
+import picSingingMic from '../assets/gallery/pic_singing_mic.png';
+import picTshirt from '../assets/gallery/pic_tshirt.png';
 
 export const siteConfig = {
   // 1. ARTIST OVERVIEW & IMAGES
