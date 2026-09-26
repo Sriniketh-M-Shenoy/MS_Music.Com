@@ -8,13 +8,13 @@ export default function Footer({ onOpenConfigHelp }) {
   };
 
   return (
-    <footer className="bg-black border-t border-white/10 pt-20 pb-12 relative">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <footer className="bg-black border-t border-white/10 pt-12 sm:pt-20 pb-8 sm:pb-12 relative">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-16 border-b border-white/10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 pb-12 sm:pb-16 border-b border-white/10">
           
-          <div className="md:col-span-5 space-y-4">
-            <span className="font-sans text-xl font-bold tracking-tight text-white block">
+          <div className="sm:col-span-2 md:col-span-5 space-y-4">
+            <span className="font-sans text-xl sm:text-2xl font-extrabold tracking-tight text-white block">
               MS
             </span>
 

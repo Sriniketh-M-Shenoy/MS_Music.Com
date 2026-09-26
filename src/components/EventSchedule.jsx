@@ -4,8 +4,8 @@ import { Calendar, ChevronRight } from 'lucide-react';
 
 export default function EventSchedule({ onOpenBooking }) {
   return (
-    <section id="events" className="py-32 relative bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="events" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
         {/* Header */}
         <motion.div
@@ -13,12 +13,12 @@ export default function EventSchedule({ onOpenBooking }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-16"
+          className="max-w-3xl mb-10 sm:mb-16"
         >
-          <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-3 font-semibold">
+          <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-2 sm:mb-3 font-semibold">
             PERFORMANCE CALENDAR
           </span>
-          <h2 className="font-sans text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+          <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
             Upcoming concerts & tour dates.
           </h2>
           <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
@@ -32,17 +32,17 @@ export default function EventSchedule({ onOpenBooking }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="apple-bento p-12 sm:p-16 text-center max-w-4xl mx-auto border border-white/15 relative overflow-hidden flex flex-col items-center justify-center space-y-6"
+          className="apple-bento p-8 sm:p-16 text-center max-w-4xl mx-auto border border-white/15 relative overflow-hidden flex flex-col items-center justify-center space-y-6"
         >
-          <div className="w-16 h-16 rounded-3xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center">
-            <Calendar className="w-8 h-8" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center">
+            <Calendar className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
 
           <div>
             <span className="text-xs uppercase font-mono tracking-[0.3em] text-amber-400 font-bold block mb-2">
               TOUR & CONCERT DATES
             </span>
-            <h3 className="font-sans text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
+            <h3 className="font-sans text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
               Coming Soon
             </h3>
             <p className="text-gray-400 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">

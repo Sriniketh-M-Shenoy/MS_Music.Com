@@ -21,8 +21,8 @@ export default function LatestPostsSection() {
   };
 
   return (
-    <section id="posts" className="py-32 relative bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="posts" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
         {/* Header */}
         <motion.div
@@ -30,12 +30,12 @@ export default function LatestPostsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-16"
+          className="max-w-3xl mb-10 sm:mb-16"
         >
-          <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-3 font-semibold">
+          <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-2 sm:mb-3 font-semibold">
             OFFICIAL MEDIA & SOCIAL FEEDS
           </span>
-          <h2 className="font-sans text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+          <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
             Latest Posts & Releases
           </h2>
           <p className="text-gray-400 text-sm sm:text-base leading-relaxed">

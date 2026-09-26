@@ -5,8 +5,8 @@ import { siteConfig } from '../config/siteConfig';
 
 export default function About({ onOpenBooking }) {
   return (
-    <section id="about" className="py-32 relative bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="about" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
         {/* Header */}
         <motion.div
@@ -14,9 +14,9 @@ export default function About({ onOpenBooking }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-16"
+          className="max-w-3xl mb-10 sm:mb-16"
         >
-          <h2 className="font-sans text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+          <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
             About Me
           </h2>
         </motion.div>
@@ -30,7 +30,7 @@ export default function About({ onOpenBooking }) {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-5 apple-bento p-3 relative overflow-hidden group min-h-[480px]"
+            className="lg:col-span-5 apple-bento p-2.5 sm:p-3 relative overflow-hidden group min-h-[320px] sm:min-h-[480px]"
           >
             <img
               src={siteConfig.artist.portraitImage}
@@ -48,7 +48,7 @@ export default function About({ onOpenBooking }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-80px' }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-              className="apple-bento p-8 sm:p-10 space-y-6"
+              className="apple-bento p-6 sm:p-10 space-y-5 sm:space-y-6"
             >
               <h3 className="font-sans text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 Musical Journey & Artistry

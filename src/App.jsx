@@ -23,7 +23,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-gray-100 flex flex-col font-sans selection:bg-amber-400 selection:text-black antialiased">
+    <div className="min-h-screen bg-black text-gray-100 flex flex-col font-sans selection:bg-amber-400 selection:text-black antialiased overflow-x-hidden">
       {/* Top Navbar */}
       <Navbar
         onOpenBooking={handleOpenBooking}

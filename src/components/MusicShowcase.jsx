@@ -13,8 +13,8 @@ export default function MusicShowcase() {
   const filterLanguages = ['All', 'Kannada', 'Hindi', 'Konkani', 'Malayalam'];
 
   return (
-    <section id="showcase" className="py-32 relative bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="showcase" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
         {/* Header */}
         <motion.div
@@ -22,12 +22,12 @@ export default function MusicShowcase() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-16"
+          className="max-w-3xl mb-10 sm:mb-16"
         >
-          <span className="text-xs uppercase font-mono tracking-widestApple text-amber-400 block mb-3 font-semibold">
+          <span className="text-xs uppercase font-mono tracking-widestApple text-amber-400 block mb-2 sm:mb-3 font-semibold">
             SPOTIFY AUDIO SHOWCASE
           </span>
-          <h2 className="font-sans text-4xl sm:text-6xl font-bold tracking-tight text-white mb-4">
+          <h2 className="font-sans text-3xl sm:text-6xl font-bold tracking-tight text-white mb-4">
             Listen to studio tracks & live performances.
           </h2>
         </motion.div>
@@ -38,15 +38,15 @@ export default function MusicShowcase() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="apple-bento p-6 sm:p-8 rounded-3xl mb-16 border border-white/15 overflow-hidden"
+          className="apple-bento p-5 sm:p-8 rounded-3xl mb-12 sm:mb-16 border border-white/15 overflow-hidden"
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center text-black">
+              <div className="w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center text-black flex-shrink-0">
                 <Music2 className="w-5 h-5 fill-black" />
               </div>
               <div>
-                <h3 className="font-sans text-xl font-bold text-white tracking-tight">
+                <h3 className="font-sans text-lg sm:text-xl font-bold text-white tracking-tight">
                   Official Spotify Artist Player
                 </h3>
                 <p className="text-xs text-gray-400">
@@ -59,7 +59,7 @@ export default function MusicShowcase() {
               href={siteConfig.socials.spotify}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#1DB954] hover:bg-[#1ed760] text-black font-extrabold px-6 py-2.5 rounded-full text-xs transition-all shadow-xl flex items-center gap-2"
+              className="w-full sm:w-auto bg-[#1DB954] hover:bg-[#1ed760] text-black font-extrabold px-6 py-2.5 rounded-full text-xs transition-all shadow-xl flex items-center justify-center gap-2"
             >
               <span>Listen on Spotify Profile</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -82,10 +82,10 @@ export default function MusicShowcase() {
         </motion.div>
 
         {/* Audio Track Selector Grid linking to Spotify */}
-        <div className="mb-24">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+        <div className="mb-16 sm:mb-24">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
             <div>
-              <h3 className="text-2xl font-bold text-white tracking-tight mb-1">
+              <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-1">
                 Featured Audio Repertoire
               </h3>
               <p className="text-xs text-gray-400">
@@ -93,12 +93,12 @@ export default function MusicShowcase() {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 no-scrollbar">
               {filterLanguages.map((lang) => (
                 <button
                   key={lang}
                   onClick={() => setSelectedLanguage(lang)}
-                  className={`text-xs px-4 py-1.5 rounded-full transition-all ${
+                  className={`text-xs px-4 py-1.5 rounded-full transition-all flex-shrink-0 ${
                     selectedLanguage === lang
                       ? 'bg-white text-black font-bold'
                       : 'bg-white/[0.04] text-gray-400 hover:text-white border border-white/10'

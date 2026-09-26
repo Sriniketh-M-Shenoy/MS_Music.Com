@@ -14,8 +14,8 @@ export default function Gallery() {
     : siteConfig.gallery.filter(item => item.category.toLowerCase() === selectedCategory.toLowerCase());
 
   return (
-    <section id="gallery" className="py-32 relative bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="gallery" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
         {/* Header */}
         <motion.div
@@ -23,23 +23,23 @@ export default function Gallery() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-16"
+          className="max-w-3xl mb-10 sm:mb-16"
         >
-          <span className="text-xs uppercase font-mono tracking-widestApple text-amber-400 block mb-3 font-semibold">
+          <span className="text-xs uppercase font-mono tracking-widestApple text-amber-400 block mb-2 sm:mb-3 font-semibold">
             VISUAL GALLERY
           </span>
-          <h2 className="font-sans text-4xl sm:text-6xl font-bold tracking-tight text-white mb-4">
+          <h2 className="font-sans text-3xl sm:text-6xl font-bold tracking-tight text-white mb-4">
             Moments captured on stage and in the studio.
           </h2>
         </motion.div>
 
         {/* Category Pills */}
-        <div className="flex flex-wrap justify-start gap-2 mb-12">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 mb-8 sm:mb-12 no-scrollbar">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`text-xs px-4 py-2 rounded-full font-medium transition-all ${
+              className={`text-xs px-4 py-2 rounded-full font-medium transition-all flex-shrink-0 ${
                 selectedCategory === cat
                   ? 'bg-white text-black font-bold'
                   : 'bg-white/[0.04] text-gray-400 hover:text-white border border-white/10'
@@ -65,7 +65,7 @@ export default function Gallery() {
                 onClick={() => setActiveImage(item)}
                 className="apple-bento overflow-hidden group cursor-pointer border border-white/10 hover:border-white/30 transition-all relative flex flex-col justify-between"
               >
-                <div className="h-72 overflow-hidden relative">
+                <div className="h-56 sm:h-72 overflow-hidden relative">
                   <img
                     src={item.url}
                     alt={item.caption}
@@ -84,8 +84,8 @@ export default function Gallery() {
                   </div>
                 </div>
 
-                <div className="p-5 bg-black">
-                  <p className="font-sans text-base font-semibold text-white">
+                <div className="p-4 sm:p-5 bg-black">
+                  <p className="font-sans text-sm sm:text-base font-semibold text-white">
                     {item.caption}
                   </p>
                 </div>
@@ -101,14 +101,14 @@ export default function Gallery() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-6"
+              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6"
             >
               <button
                 onClick={() => setActiveImage(null)}
-                className="absolute top-8 right-8 text-white hover:text-gray-300 p-3 bg-white/10 rounded-full border border-white/20 transition-colors"
+                className="absolute top-4 right-4 sm:top-8 sm:right-8 text-white hover:text-gray-300 p-2.5 sm:p-3 bg-white/10 rounded-full border border-white/20 transition-colors z-10"
                 aria-label="Close lightbox"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
 
               <motion.div
@@ -116,18 +116,18 @@ export default function Gallery() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="max-w-5xl w-full apple-bento p-4 border border-white/20 overflow-hidden"
+                className="max-w-5xl w-full apple-bento p-3 sm:p-4 border border-white/20 overflow-hidden"
               >
                 <img
                   src={activeImage.url}
                   alt={activeImage.caption}
-                  className="w-full max-h-[75vh] object-contain rounded-2xl mb-4"
+                  className="w-full max-h-[65vh] sm:max-h-[75vh] object-contain rounded-2xl mb-3 sm:mb-4"
                 />
-                <div className="text-center p-4">
-                  <span className="text-xs uppercase font-mono text-amber-400 border border-amber-400/30 px-3 py-1 rounded-full">
+                <div className="text-center p-2 sm:p-4">
+                  <span className="text-[10px] sm:text-xs uppercase font-mono text-amber-400 border border-amber-400/30 px-3 py-1 rounded-full">
                     {activeImage.category}
                   </span>
-                  <h3 className="font-sans text-2xl font-bold text-white mt-3">
+                  <h3 className="font-sans text-lg sm:text-2xl font-bold text-white mt-3">
                     {activeImage.caption}
                   </h3>
                 </div>

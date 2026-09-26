@@ -23,8 +23,8 @@ export default function EnquirySection() {
   };
 
   return (
-    <section id="enquire" className="py-32 relative bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="enquire" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
         {/* Eyebrow & Section Header */}
         <motion.div
@@ -32,12 +32,12 @@ export default function EnquirySection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-16"
+          className="max-w-3xl mb-10 sm:mb-16"
         >
-          <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-3 font-semibold">
+          <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-2 sm:mb-3 font-semibold">
             PERFORMANCE BOOKING & ENQUIRY
           </span>
-          <h2 className="font-sans text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+          <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
             Booking Enquiry & Performance Request
           </h2>
           <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
@@ -46,18 +46,18 @@ export default function EnquirySection() {
         </motion.div>
 
         {/* Direct Email Card */}
-        <div className="max-w-md mx-auto mb-12">
+        <div className="max-w-md mx-auto mb-10 sm:mb-12">
           <motion.a
             whileHover={{ y: -4 }}
             href={`mailto:${siteConfig.socials.email}`}
-            className="apple-bento p-6 border border-white/10 hover:border-white/30 flex items-center justify-center gap-4 transition-colors group text-center"
+            className="apple-bento p-5 sm:p-6 border border-white/10 hover:border-white/30 flex items-center justify-center gap-4 transition-colors group text-center"
           >
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 group-hover:bg-white group-hover:text-black transition-colors flex-shrink-0">
-              <Mail className="w-6 h-6" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 group-hover:bg-white group-hover:text-black transition-colors flex-shrink-0">
+              <Mail className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div className="text-left">
+            <div className="text-left overflow-hidden">
               <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-400 font-bold block mb-1">Direct Official Email</span>
-              <p className="text-sm text-white font-medium">{siteConfig.socials.email}</p>
+              <p className="text-xs sm:text-sm text-white font-medium truncate">{siteConfig.socials.email}</p>
             </div>
           </motion.a>
         </div>
@@ -65,7 +65,7 @@ export default function EnquirySection() {
         {/* Form Container */}
         <motion.div
           layout
-          className="max-w-3xl mx-auto apple-bento p-8 sm:p-12 border border-white/15"
+          className="max-w-3xl mx-auto apple-bento p-6 sm:p-12 border border-white/15"
         >
           {submitted ? (
             <div className="text-center py-12 space-y-4">
