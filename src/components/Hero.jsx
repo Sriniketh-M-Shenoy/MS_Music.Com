@@ -57,20 +57,6 @@ export default function Hero({ onOpenBooking }) {
         animate="visible"
         className="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-12 z-10 w-full"
       >
-        {/* Top Right Signature Overlay */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.4 }}
-          className="absolute top-0 right-5 sm:right-12 z-20 pointer-events-none"
-        >
-          <img
-            src={siteConfig.artist.signatureImage}
-            alt="Muralidhar Shenoy Signature"
-            className="h-16 sm:h-24 lg:h-32 w-auto object-contain opacity-90 filter brightness-125 drop-shadow-2xl"
-          />
-        </motion.div>
-        
         {/* Artist Name Header */}
         <motion.h1
           variants={itemVariants}
