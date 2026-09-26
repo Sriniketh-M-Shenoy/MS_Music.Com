@@ -39,11 +39,6 @@ export default function Navbar({ onOpenBooking }) {
           
           {/* Brand Logo */}
           <a href="#" className="flex items-center gap-2 group">
-            <motion.span
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-400 flex-shrink-0"
-            />
             {/* Desktop Brand Text */}
             <span className="hidden md:inline-block font-sans text-xs xs:text-sm sm:text-base font-extrabold tracking-tight text-white group-hover:text-amber-300 transition-colors">
               MURALIDHAR SHENOY
