@@ -1,8 +1,8 @@
 import React from 'react';
-import { Instagram, Facebook, Youtube, Settings, ArrowUp } from 'lucide-react';
+import { Instagram, Facebook, Youtube, ArrowUp } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
 
-export default function Footer({ onOpenConfigHelp }) {
+export default function Footer() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -81,16 +81,6 @@ export default function Footer({ onOpenConfigHelp }) {
             <p className="text-xs text-gray-400">
               Email: <a href={`mailto:${siteConfig.socials.email}`} className="text-amber-300 hover:underline">{siteConfig.socials.email}</a>
             </p>
-            
-            <div className="pt-2">
-              <button
-                onClick={onOpenConfigHelp}
-                className="text-xs text-amber-400 hover:text-white bg-white/5 border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>Site Config Guide</span>
-              </button>
-            </div>
           </div>
 
         </div>

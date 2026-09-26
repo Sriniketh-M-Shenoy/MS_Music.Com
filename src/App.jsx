@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -9,12 +9,9 @@ import Gallery from './components/Gallery';
 import SocialsSection from './components/SocialsSection';
 import Testimonials from './components/Testimonials';
 import EnquirySection from './components/EnquirySection';
-import ConfigHelperModal from './components/ConfigHelperModal';
 import Footer from './components/Footer';
 
 export default function App() {
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-
   const handleOpenBooking = () => {
     const enquireSection = document.getElementById('enquire');
     if (enquireSection) {
@@ -25,10 +22,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black text-gray-100 flex flex-col font-sans selection:bg-amber-400 selection:text-black antialiased overflow-x-hidden">
       {/* Top Navbar */}
-      <Navbar
-        onOpenBooking={handleOpenBooking}
-        onOpenConfigHelp={() => setIsConfigModalOpen(true)}
-      />
+      <Navbar onOpenBooking={handleOpenBooking} />
 
       {/* Main Sections */}
       <main className="flex-grow">
@@ -44,13 +38,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer onOpenConfigHelp={() => setIsConfigModalOpen(true)} />
-
-      {/* Interactive Config Helper Modal */}
-      <ConfigHelperModal
-        isOpen={isConfigModalOpen}
-        onClose={() => setIsConfigModalOpen(false)}
-      />
+      <Footer />
     </div>
   );
 }

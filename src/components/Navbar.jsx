@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Settings } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
-export default function Navbar({ onOpenBooking, onOpenConfigHelp }) {
+export default function Navbar({ onOpenBooking }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -65,16 +65,6 @@ export default function Navbar({ onOpenBooking, onOpenConfigHelp }) {
           {/* Right Action Button */}
           <div className="hidden md:flex items-center gap-4">
             <motion.button
-              whileHover={{ scale: 1.1, rotate: 45 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onOpenConfigHelp}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-              title="Site Config Info"
-            >
-              <Settings className="w-4 h-4" />
-            </motion.button>
-
-            <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
@@ -124,18 +114,6 @@ export default function Navbar({ onOpenBooking, onOpenConfigHelp }) {
                 {link.name}
               </a>
             ))}
-            <div className="pt-4 flex items-center justify-between text-xs text-gray-400">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenConfigHelp();
-                }}
-                className="flex items-center gap-1.5 text-amber-400"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Config Guide</span>
-              </button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
