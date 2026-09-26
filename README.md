@@ -1,95 +1,64 @@
-# Muralidhar G. Shenoy - Official Vocalist Website 🎵
+# Muralidhar Shenoy - Official Vocalist Website 🎵
 
-A modern, elegant, multi-lingual portfolio and performance booking website for **Muralidhar G. Shenoy** — Classical, Light Music (Sugama Sangeetha), and Film Song Vocalist.
+[![Live Website](https://img.shields.io/badge/Live_Website-bit.ly%2Fmsmusicworld-amber?style=for-the-badge&logo=googlechrome&logoColor=black)](https://bit.ly/msmusicworld)
+[![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Active-emerald?style=for-the-badge&logo=github)](https://sriniketh-m-shenoy.github.io/MS_Music.Com/)
 
-Built with **React**, **Vite**, **Tailwind CSS**, and **Lucide Icons**, optimized for fast loading and deployment to **GitHub Pages**.
+Official website for **Muralidhar Shenoy** (MS) — Classical, Light Music (Sugama Sangeetha), Devotional, and Multi-lingual Playback Vocalist & Composer.
+
+👉 **Official Website Link**: [https://bit.ly/msmusicworld](https://bit.ly/msmusicworld)
 
 ---
 
 ## 🌟 Key Features
 
-1. **Central Configuration File (`src/config/siteConfig.js`)**:
-   - All website text, singer bio, social media links, Google Form URLs, audio samples, YouTube videos, event schedules, photo gallery, testimonials, and FAQs are driven by a single file.
-   - Edit content without touching any React code!
+1. **Official Audio & Spotify Integration**:
+   - Embedded official Spotify artist player for seamless audio streaming.
+   - Categorized audio repertoire (*Kannada, Hindi, Konkani, Malayalam*) linking directly to official Spotify tracks.
 
-2. **Google Form Integration (`#enquire`)**:
-   - Embedded Google Form for event booking requests.
-   - Direct button to open Google Form in a new tab.
-   - Quick fallback to instant WhatsApp or Email enquiries.
+2. **Official Media & Social Feeds**:
+   - Bento-grid social media cards linking directly to Spotify, YouTube, Instagram, and Facebook profiles.
+   - Featured YouTube video covers and devotional Haribhajans.
 
-3. **Audio & Video Showcase**:
-   - Interactive custom audio preview player with language filters (*Kannada, Hindi, Konkani, Classical*).
-   - Filterable YouTube video grid showcasing live concert recordings.
+3. **Performance Calendar**:
+   - Concert schedule and tour announcements section.
 
-4. **Concert & Event Schedule**:
-   - Highlight upcoming and past concerts with date badges, venues, times, and RSVP links.
+4. **Visual Gallery**:
+   - High-resolution photo gallery (*Concerts, Studio, Festival, Devotional*) with full-screen lightbox modal viewer.
 
-5. **Photo Gallery & Lightbox**:
-   - Filterable gallery (*Concerts, Studio, Festival, Devotional*) with full-screen lightbox modal viewer.
+5. **Performance Booking & Enquiry Form**:
+   - Direct booking form (*Name, Email, Phone Number, Enquiry details text box*).
+   - Automatically prepares direct emails to `booking.muralidharshenoy@gmail.com`.
 
-6. **Responsive Royal Design**:
-   - Crafted with a gold and deep velvet aesthetic suitable for classical and playback vocal performances.
+6. **Apple-Grade Dark Aesthetic & Mobile Responsive**:
+   - Designed with deep black backdrop (`#0B0A10`), subtle glassmorphism borders, gold highlights (`amber-400`), and full mobile responsiveness for all smartphone screens.
 
----
-
-## ⚙️ How to Customize Site Content (`siteConfig.js`)
-
-Open `src/config/siteConfig.js` in your editor to update any details:
-
-### 1. Social Media Links
-```javascript
-socials: {
-  instagram: "https://www.instagram.com/muralidhargshenoy/?hl=en",
-  facebook: "https://www.facebook.com/muralidhar.g.shenoy/",
-  youtube: "https://www.youtube.com/channel/UCZZkLUPMv1Ka4bNSyOpYGOA",
-  whatsapp: "https://wa.me/919876543210...",
-  email: "booking.muralidharshenoy@gmail.com",
-}
-```
-
-### 2. Google Form Embed URL
-To embed your custom Google Form:
-1. Open your Google Form -> Click **Send**.
-2. Go to the **`< >` (Embed HTML)** tab and copy the `src` link.
-3. Paste the link into `googleForm.embedUrl` in `src/config/siteConfig.js`.
+7. **Central Configuration (`src/config/siteConfig.js`)**:
+   - All artist bio text, social links, audio tracks, latest posts, gallery photos, and enquiries are driven by a single config file.
 
 ---
 
-## 🚀 Hosting on GitHub Pages
+## 💻 Tech Stack
 
-This project is pre-configured for GitHub Pages deployment.
+- **Framework**: React 18 + Vite
+- **Styling**: Tailwind CSS + Framer Motion animations
+- **Icons**: Lucide React
+- **Deployment**: GitHub Actions CI/CD + GitHub Pages
 
-### Step 1: Initialize Git Repository
+---
+
+## 🌐 Live Links
+
+- **Short URL**: [https://bit.ly/msmusicworld](https://bit.ly/msmusicworld)
+- **GitHub Pages URL**: [https://sriniketh-m-shenoy.github.io/MS_Music.Com/](https://sriniketh-m-shenoy.github.io/MS_Music.Com/)
+
+---
+
+## 🚀 Automated Deployment
+
+Every commit pushed to the `main` branch automatically triggers the **GitHub Actions** pipeline (`.github/workflows/deploy.yml`) to build and deploy the latest site to GitHub Pages.
+
 ```bash
-git init
 git add .
-git commit -m "Initial commit of Muralidhar Shenoy Music Website"
-```
-
-### Step 2: Push to GitHub
-```bash
-git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/MS_Music_Website.git
-git push -u origin main
-```
-
-### Step 3: Deploy to GitHub Pages
-Run the built-in deploy command:
-```bash
-npm run deploy
-```
-This automatically builds your site (`npm run build`) and publishes the static files to the `gh-pages` branch on GitHub!
-
----
-
-## 💻 Local Development
-
-Run local development server:
-```bash
-npm run dev
-```
-
-Build production bundle:
-```bash
-npm run build
+git commit -m "Update site content"
+git push origin main
 ```
