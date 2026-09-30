@@ -474,9 +474,18 @@ export default function StudioApp({ onCloseStudio }) {
       
       {/* TOP HEADER BAR (Shown only in Edit Mode) */}
       <header className="sticky top-0 z-50 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800/80 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-xl">
-        <div>
-          <h1 className="font-extrabold text-lg tracking-tight text-white">MS Music Studio</h1>
-          <p className="text-xs text-zinc-400">Easy Website Manager for Muralidhar Shenoy</p>
+        <div className="flex items-center gap-3">
+          <img
+            src={resolveImageSrc(hero.signatureImage || initialHero.signatureImage)}
+            alt="Muralidhar Shenoy Signature"
+            className="h-9 lg:h-10 w-auto object-contain filter brightness-125"
+          />
+          <div>
+            <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
+              MS Music Studio
+            </h1>
+            <p className="text-[11px] text-zinc-400">Easy Website Manager for Muralidhar Shenoy</p>
+          </div>
         </div>
 
         {/* CENTER VIEW TOGGLE */}

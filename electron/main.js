@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell, dialog } from 'electron';
+import { app, BrowserWindow, Menu, shell, dialog, nativeImage } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -14,12 +14,16 @@ let mainWindow = null;
 const SERVER_PORT = 3001;
 
 function createWindow() {
+  const iconPath = path.join(ROOT_DIR, 'build', 'icon.png');
+  const appIcon = fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : null;
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1024,
     minHeight: 700,
     title: 'MS Music Studio',
+    icon: appIcon || undefined,
     backgroundColor: '#09090b',
     titleBarStyle: 'hiddenInset',
     webPreferences: {

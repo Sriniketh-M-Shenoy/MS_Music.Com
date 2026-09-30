@@ -30,7 +30,7 @@ export const galleryContent = [
   },
   {
     id: 1790801696287,
-    url: "/uploads/Pixel_Wallpaper_R_MkbHD_1790801703321.png",
+    url: "/uploads/MkbHD_S_New_Wallpaper_R_1790801788208.png",
     caption: "Performance Photo",
     category: "Concerts"
   }
