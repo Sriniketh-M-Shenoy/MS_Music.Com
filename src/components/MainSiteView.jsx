@@ -9,6 +9,7 @@ import Gallery from './Gallery';
 import SocialsSection from './SocialsSection';
 import Testimonials from './Testimonials';
 import EnquirySection from './EnquirySection';
+import CustomSection from './CustomSection';
 import Footer from './Footer';
 import { SiteConfigContext, siteConfig as defaultSiteConfig } from '../config/siteConfig';
 
@@ -33,35 +34,38 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
   ];
 
   // Dynamically derive active site configuration if custom studio content is passed
-  const activeSiteConfig = customContent ? {
-    artist: {
-      ...(customContent.hero || defaultSiteConfig.artist || {}),
-      ...(customContent.about || {}),
-      verifiedBadge: "Verified Artist",
-      youtubeHandle: customContent.socials?.youtubeHandle || defaultSiteConfig.artist?.youtubeHandle,
-    },
-    socials: customContent.socials || defaultSiteConfig.socials,
-    latestPosts: customContent.posts || defaultSiteConfig.latestPosts,
-    googleForm: {
-      enabled: customContent.socials ? (customContent.socials.googleFormEnabled !== false) : defaultSiteConfig.googleForm.enabled,
-      title: "Booking Enquiry & Performance Request",
-      description: "Submit your event details via our official Google Form or email directly for custom concert programming.",
-      embedUrl: customContent.socials?.googleFormEmbedUrl !== undefined ? customContent.socials.googleFormEmbedUrl : defaultSiteConfig.googleForm.embedUrl,
-      directFormUrl: customContent.socials?.googleFormDirectUrl !== undefined ? customContent.socials.googleFormDirectUrl : defaultSiteConfig.googleForm.directFormUrl,
-      contactEmail: customContent.socials?.email || defaultSiteConfig.socials.email
-    },
-    emailForm: {
-      enabled: customContent.socials ? (customContent.socials.emailFormEnabled !== false) : (defaultSiteConfig.emailForm?.enabled !== false),
-      contactEmail: customContent.socials?.email || defaultSiteConfig.socials.email
-    },
-    audioTracks: customContent.audio || defaultSiteConfig.audioTracks,
-    events: customContent.events || defaultSiteConfig.events,
-    gallery: customContent.gallery || defaultSiteConfig.gallery,
-    testimonials: customContent.testimonials || defaultSiteConfig.testimonials,
-    faqs: customContent.faqs || defaultSiteConfig.faqs
-  } : defaultSiteConfig;
+  const activeSiteConfig = {
+    ...(customContent ? {
+      artist: {
+        ...(customContent.hero || defaultSiteConfig.artist || {}),
+        ...(customContent.about || {}),
+        verifiedBadge: "Verified Artist",
+        youtubeHandle: customContent.socials?.youtubeHandle || defaultSiteConfig.artist?.youtubeHandle,
+      },
+      socials: customContent.socials || defaultSiteConfig.socials,
+      latestPosts: customContent.posts || defaultSiteConfig.latestPosts,
+      googleForm: {
+        enabled: customContent.socials ? (customContent.socials.googleFormEnabled !== false) : defaultSiteConfig.googleForm.enabled,
+        title: "Booking Enquiry & Performance Request",
+        description: "Submit your event details via our official Google Form or email directly for custom concert programming.",
+        embedUrl: customContent.socials?.googleFormEmbedUrl !== undefined ? customContent.socials.googleFormEmbedUrl : defaultSiteConfig.googleForm.embedUrl,
+        directFormUrl: customContent.socials?.googleFormDirectUrl !== undefined ? customContent.socials.googleFormDirectUrl : defaultSiteConfig.googleForm.directFormUrl,
+        contactEmail: customContent.socials?.email || defaultSiteConfig.socials.email
+      },
+      emailForm: {
+        enabled: customContent.socials ? (customContent.socials.emailFormEnabled !== false) : (defaultSiteConfig.emailForm?.enabled !== false),
+        contactEmail: customContent.socials?.email || defaultSiteConfig.socials.email
+      },
+      audioTracks: customContent.audio || defaultSiteConfig.audioTracks,
+      events: customContent.events || defaultSiteConfig.events,
+      gallery: customContent.gallery || defaultSiteConfig.gallery,
+      testimonials: customContent.testimonials || defaultSiteConfig.testimonials,
+      faqs: customContent.faqs || defaultSiteConfig.faqs
+    } : defaultSiteConfig),
+    sectionConfig: currentConfig
+  };
 
-  const sectionComponents = {
+  const builtInComponents = {
     hero: <Hero key="hero" onOpenBooking={handleOpenBooking} />,
     about: <About key="about" onOpenBooking={handleOpenBooking} />,
     posts: <LatestPostsSection key="posts" />,
@@ -75,8 +79,7 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
 
   const activeSections = currentConfig
     .filter(sec => sec.enabled !== false)
-    .map(sec => sectionComponents[sec.id])
-    .filter(Boolean);
+    .map(sec => builtInComponents[sec.id] || <CustomSection key={sec.id} section={sec} />);
 
   return (
     <SiteConfigContext.Provider value={activeSiteConfig}>
@@ -107,4 +110,3 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
     </SiteConfigContext.Provider>
   );
 }
-

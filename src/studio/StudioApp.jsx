@@ -70,6 +70,25 @@ export default function StudioApp({ onCloseStudio }) {
   const [revertProgress, setRevertProgress] = useState(null);
   const [syncStatus, setSyncStatus] = useState(''); // 'syncing' | 'synced' | ''
 
+  // Section Manager state
+  const [isAddSectionOpen, setIsAddSectionOpen] = useState(false);
+  const [addSectionType, setAddSectionType] = useState('standard');
+  const [newCustomName, setNewCustomName] = useState('');
+  const [newCustomDesc, setNewCustomDesc] = useState('');
+  const [newCustomContent, setNewCustomContent] = useState('');
+
+  const ALL_BUILTIN_SECTIONS = [
+    { id: 'hero', name: 'Hero Banner & Tagline' },
+    { id: 'about', name: 'About Artist & Biography' },
+    { id: 'posts', name: 'Latest Posts & Social Feeds' },
+    { id: 'music', name: 'Music & Audio Track Showcase' },
+    { id: 'events', name: 'Concerts & Event Schedule' },
+    { id: 'socials', name: 'YouTube & Social Channels' },
+    { id: 'gallery', name: 'Photo & Performance Gallery' },
+    { id: 'testimonials', name: 'Client & Fan Testimonials' },
+    { id: 'enquiry', name: 'Booking Enquiry & Google Form' }
+  ];
+
   // Fetch status, version history & auto-pull latest from git remote on mount
   useEffect(() => {
     handleSyncGitPull();
@@ -354,6 +373,55 @@ export default function StudioApp({ onCloseStudio }) {
     newConfig[index].enabled = !newConfig[index].enabled;
     setSectionConfig(newConfig);
     markDirty();
+  };
+
+  const updateSectionName = (index, name) => {
+    const newConfig = [...sectionConfig];
+    newConfig[index].name = name;
+    setSectionConfig(newConfig);
+    markDirty();
+  };
+
+  const updateCustomSectionField = (index, field, value) => {
+    const newConfig = [...sectionConfig];
+    newConfig[index][field] = value;
+    setSectionConfig(newConfig);
+    markDirty();
+  };
+
+  const deleteSection = (index) => {
+    const newConfig = sectionConfig.filter((_, i) => i !== index);
+    setSectionConfig(newConfig);
+    markDirty();
+  };
+
+  const handleAddStandardSection = (standardSec) => {
+    if (!standardSec) return;
+    const newConfig = [...sectionConfig, { id: standardSec.id, name: standardSec.name, enabled: true }];
+    setSectionConfig(newConfig);
+    markDirty();
+    setIsAddSectionOpen(false);
+  };
+
+  const handleAddCustomSection = () => {
+    if (!newCustomName || !newCustomName.trim()) {
+      alert('Please enter a section name.');
+      return;
+    }
+    const customId = `custom_${Date.now()}`;
+    const newConfig = [...sectionConfig, {
+      id: customId,
+      name: newCustomName.trim(),
+      description: newCustomDesc.trim(),
+      content: newCustomContent.trim(),
+      enabled: true
+    }];
+    setSectionConfig(newConfig);
+    markDirty();
+    setNewCustomName('');
+    setNewCustomDesc('');
+    setNewCustomContent('');
+    setIsAddSectionOpen(false);
   };
 
   // FULL SITE PREVIEW MODE: Pure website preview with a sleek center-left floating arrow tab
@@ -1383,51 +1451,222 @@ export default function StudioApp({ onCloseStudio }) {
                 </div>
               )}
 
-              {/* 10. REORDER SECTIONS TAB */}
+              {/* 10. REORDER & MANAGE SECTIONS TAB */}
               {activeTab === 'order' && (
                 <div className="space-y-6">
-                  <div className="border-b border-zinc-800 pb-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <Sliders className="w-5 h-5 text-amber-400" />
-                      Section Order & Visibility Controls
-                    </h2>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Sliders className="w-5 h-5 text-amber-400" />
+                        Section Names, Reorder & Visibility
+                      </h2>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Edit section names, reorder layout, hide sections, or add/remove sections completely.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setIsAddSectionOpen(!isAddSectionOpen)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Section
+                    </button>
                   </div>
 
+                  {/* Add Section Panel */}
+                  {isAddSectionOpen && (
+                    <div className="bg-zinc-900 border border-amber-500/40 rounded-xl p-4 space-y-4 shadow-xl">
+                      <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                        <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Add New Section to Website</span>
+                        <button onClick={() => setIsAddSectionOpen(false)} className="text-zinc-400 hover:text-white">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setAddSectionType('standard')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            addSectionType === 'standard' ? 'bg-amber-500 text-black' : 'bg-zinc-800 text-zinc-400'
+                          }`}
+                        >
+                          Re-add Standard Section
+                        </button>
+                        <button
+                          onClick={() => setAddSectionType('custom')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            addSectionType === 'custom' ? 'bg-amber-500 text-black' : 'bg-zinc-800 text-zinc-400'
+                          }`}
+                        >
+                          Create Custom Section
+                        </button>
+                      </div>
+
+                      {addSectionType === 'standard' ? (
+                        <div className="space-y-2">
+                          <span className="text-xs text-zinc-300 block">Select a standard built-in section to re-add:</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {ALL_BUILTIN_SECTIONS.filter(sec => !sectionConfig.some(s => s.id === sec.id)).length === 0 ? (
+                              <p className="text-xs text-zinc-500 col-span-2 py-2">All standard sections are already present on your page.</p>
+                            ) : (
+                              ALL_BUILTIN_SECTIONS.filter(sec => !sectionConfig.some(s => s.id === sec.id)).map(sec => (
+                                <button
+                                  key={sec.id}
+                                  onClick={() => handleAddStandardSection(sec)}
+                                  className="flex items-center justify-between p-2.5 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-xs text-white font-semibold transition-all text-left"
+                                >
+                                  <span>{sec.name}</span>
+                                  <Plus className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-zinc-300 mb-1">Section Title / Name</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Special Honors & Awards"
+                              value={newCustomName}
+                              onChange={e => setNewCustomName(e.target.value)}
+                              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-zinc-300 mb-1">Short Description / Subtitle (Optional)</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Highlights and recognitions over the years"
+                              value={newCustomDesc}
+                              onChange={e => setNewCustomDesc(e.target.value)}
+                              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-zinc-300 mb-1">Section Body Content</label>
+                            <textarea
+                              rows={4}
+                              placeholder="Type section details, biography highlights, awards list, or custom content..."
+                              value={newCustomContent}
+                              onChange={e => setNewCustomContent(e.target.value)}
+                              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <button
+                            onClick={handleAddCustomSection}
+                            className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Create & Add Custom Section
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Section List */}
                   <div className="space-y-3">
                     {sectionConfig.map((sec, idx) => (
-                      <div key={sec.id} className="flex items-center justify-between bg-zinc-900 border border-zinc-800/80 p-3 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => toggleSection(idx)}
-                            className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
-                              sec.enabled 
-                                ? 'bg-amber-500 border-amber-400 text-black font-bold' 
-                                : 'bg-zinc-800 border-zinc-700 text-transparent'
-                            }`}
-                          >
-                            ✓
-                          </button>
-                          <span className={`text-xs font-bold ${sec.enabled ? 'text-white' : 'text-zinc-500 line-through'}`}>
-                            {idx + 1}. {sec.name}
-                          </span>
+                      <div key={sec.id} className="bg-zinc-900 border border-zinc-800/80 p-3.5 rounded-xl space-y-3 shadow-md">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          
+                          {/* Left: Enable toggle & Editable Name */}
+                          <div className="flex items-center gap-3 flex-grow max-w-xl">
+                            <button
+                              type="button"
+                              onClick={() => toggleSection(idx)}
+                              title={sec.enabled ? "Click to hide section" : "Click to show section"}
+                              className={`w-6 h-6 rounded-md flex items-center justify-center border transition-all shrink-0 ${
+                                sec.enabled 
+                                  ? 'bg-amber-500 border-amber-400 text-black font-extrabold text-xs shadow-sm' 
+                                  : 'bg-zinc-800 border-zinc-700 text-transparent'
+                              }`}
+                            >
+                              ✓
+                            </button>
+
+                            <span className="text-xs font-mono font-bold text-zinc-500 shrink-0">#{idx + 1}</span>
+
+                            <input
+                              type="text"
+                              value={sec.name || ''}
+                              onChange={e => updateSectionName(idx, e.target.value)}
+                              placeholder="Section Name"
+                              className={`flex-grow bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs font-bold outline-none focus:border-amber-500 transition-colors ${
+                                sec.enabled ? 'text-white' : 'text-zinc-500 line-through'
+                              }`}
+                            />
+                          </div>
+
+                          {/* Right: Controls (Up, Down, Delete) */}
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => moveSection(idx, -1)}
+                              disabled={idx === 0}
+                              title="Move Up"
+                              className="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg disabled:opacity-30 transition-all"
+                            >
+                              <ArrowUp className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => moveSection(idx, 1)}
+                              disabled={idx === sectionConfig.length - 1}
+                              title="Move Down"
+                              className="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg disabled:opacity-30 transition-all"
+                            >
+                              <ArrowDown className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to remove section "${sec.name}" completely?`)) {
+                                  deleteSection(idx);
+                                }
+                              }}
+                              title="Remove Section Completely"
+                              className="p-1.5 text-zinc-500 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all ml-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => moveSection(idx, -1)}
-                            disabled={idx === 0}
-                            className="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 rounded-lg disabled:opacity-30"
-                          >
-                            <ArrowUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => moveSection(idx, 1)}
-                            disabled={idx === sectionConfig.length - 1}
-                            className="p-1.5 text-zinc-400 hover:text-white bg-zinc-800 rounded-lg disabled:opacity-30"
-                          >
-                            <ArrowDown className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {/* Custom Section Details Editor */}
+                        {sec.id.startsWith('custom_') && (
+                          <div className="pt-3 border-t border-zinc-800/60 space-y-2 bg-zinc-950/60 p-3 rounded-lg">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-amber-400">
+                              <span>Custom Section Content Editor</span>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Subtitle / Description</label>
+                              <input
+                                type="text"
+                                value={sec.description || ''}
+                                onChange={e => updateCustomSectionField(idx, 'description', e.target.value)}
+                                placeholder="Subtitle or category description"
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white outline-none focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Main Body Text</label>
+                              <textarea
+                                rows={3}
+                                value={sec.content || ''}
+                                onChange={e => updateCustomSectionField(idx, 'content', e.target.value)}
+                                placeholder="Paragraphs or content details..."
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

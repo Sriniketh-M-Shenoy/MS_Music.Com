@@ -19,7 +19,7 @@ export default function About({ onOpenBooking }) {
           className="max-w-3xl mb-10 sm:mb-16"
         >
           <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
-            About Me
+            {siteConfig.sectionConfig?.find(s => s.id === 'about')?.name || "About Me"}
           </h2>
         </motion.div>
 

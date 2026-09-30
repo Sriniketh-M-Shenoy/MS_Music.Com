@@ -23,7 +23,7 @@ export default function EventSchedule({ onOpenBooking }) {
             PERFORMANCE CALENDAR
           </span>
           <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
-            Upcoming concerts & tour dates.
+            {siteConfig.sectionConfig?.find(s => s.id === 'events')?.name || "Upcoming concerts & tour dates."}
           </h2>
           <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
             Stay tuned for upcoming live concerts, devotional recitals, and tour schedule announcements.

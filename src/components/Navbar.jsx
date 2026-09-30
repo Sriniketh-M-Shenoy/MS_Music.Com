@@ -17,15 +17,34 @@ export default function Navbar({ onOpenBooking }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { name: 'Overview', href: '#about' },
-    { name: 'Posts', href: '#posts' },
-    { name: 'Audio Showcase', href: '#showcase' },
-    { name: 'Concerts', href: '#events' },
-    { name: 'Gallery', href: '#gallery' },
-    { name: 'Socials', href: '#socials' },
-    { name: 'Booking Enquiry', href: '#enquire' },
+  const defaultNavHrefs = {
+    hero: '#hero',
+    about: '#about',
+    posts: '#posts',
+    music: '#showcase',
+    events: '#events',
+    gallery: '#gallery',
+    socials: '#socials',
+    testimonials: '#testimonials',
+    enquiry: '#enquire'
+  };
+
+  const rawSections = siteConfig.sectionConfig || [
+    { id: 'about', name: 'Overview', enabled: true },
+    { id: 'posts', name: 'Posts', enabled: true },
+    { id: 'music', name: 'Audio Showcase', enabled: true },
+    { id: 'events', name: 'Concerts', enabled: true },
+    { id: 'gallery', name: 'Gallery', enabled: true },
+    { id: 'socials', name: 'Socials', enabled: true },
+    { id: 'enquiry', name: 'Booking Enquiry', enabled: true }
   ];
+
+  const navLinks = rawSections
+    .filter(sec => sec.enabled !== false && sec.id !== 'hero')
+    .map(sec => ({
+      name: sec.name || sec.id,
+      href: defaultNavHrefs[sec.id] || `#${sec.id}`
+    }));
 
   return (
     <motion.nav
@@ -60,7 +79,8 @@ export default function Navbar({ onOpenBooking }) {
               <a
                 key={link.name}
                 href={link.href}
-                className="text-gray-400 hover:text-white transition-colors duration-300 relative group py-1"
+                className="text-gray-400 hover:text-white transition-colors duration-300 relative group py-1 truncate max-w-[140px]"
+                title={link.name}
               >
                 {link.name}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-400 transition-all duration-300 group-hover:w-full" />
