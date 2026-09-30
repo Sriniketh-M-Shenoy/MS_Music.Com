@@ -13,7 +13,35 @@ import CustomSection from './CustomSection';
 import Footer from './Footer';
 import { SiteConfigContext, siteConfig as defaultSiteConfig } from '../config/siteConfig';
 
+function getLiveDraft() {
+  try {
+    const saved = typeof window !== 'undefined' && localStorage.getItem('ms_studio_draft');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {}
+  return null;
+}
+
 export default function MainSiteView({ customSectionConfig, customContent }) {
+  const [draftState, setDraftState] = React.useState(() => getLiveDraft());
+
+  React.useEffect(() => {
+    const handleDraftUpdate = () => {
+      setDraftState(getLiveDraft());
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleDraftUpdate);
+      window.addEventListener('ms_draft_updated', handleDraftUpdate);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleDraftUpdate);
+        window.removeEventListener('ms_draft_updated', handleDraftUpdate);
+      }
+    };
+  }, []);
+
   const handleOpenBooking = () => {
     const enquireSection = document.getElementById('enquire');
     if (enquireSection) {
@@ -21,7 +49,9 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
     }
   };
 
-  const currentConfig = customSectionConfig || defaultSiteConfig.sectionConfig || [
+  const effectiveContent = customContent || draftState;
+
+  const currentConfig = customSectionConfig || effectiveContent?.sectionConfig || defaultSiteConfig.sectionConfig || [
     { id: 'hero', name: 'Hero Banner', enabled: true },
     { id: 'about', name: 'About Artist', enabled: true },
     { id: 'posts', name: 'Latest Posts', enabled: true },
@@ -33,34 +63,34 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
     { id: 'enquiry', name: 'Booking Enquiry', enabled: true }
   ];
 
-  // Dynamically derive active site configuration if custom studio content is passed
+  // Dynamically derive active site configuration if custom studio content is passed or retrieved from draft
   const activeSiteConfig = {
-    ...(customContent ? {
+    ...(effectiveContent ? {
       artist: {
-        ...(customContent.hero || defaultSiteConfig.artist || {}),
-        ...(customContent.about || {}),
+        ...(effectiveContent.hero || defaultSiteConfig.artist || {}),
+        ...(effectiveContent.about || {}),
         verifiedBadge: "Verified Artist",
-        youtubeHandle: customContent.socials?.youtubeHandle || defaultSiteConfig.artist?.youtubeHandle,
+        youtubeHandle: effectiveContent.socials?.youtubeHandle || defaultSiteConfig.artist?.youtubeHandle,
       },
-      socials: customContent.socials || defaultSiteConfig.socials,
-      latestPosts: customContent.posts || defaultSiteConfig.latestPosts,
+      socials: effectiveContent.socials || defaultSiteConfig.socials,
+      latestPosts: effectiveContent.posts || defaultSiteConfig.latestPosts,
       googleForm: {
-        enabled: customContent.socials ? (customContent.socials.googleFormEnabled !== false) : defaultSiteConfig.googleForm.enabled,
+        enabled: effectiveContent.socials ? (effectiveContent.socials.googleFormEnabled !== false) : defaultSiteConfig.googleForm.enabled,
         title: "Booking Enquiry & Performance Request",
         description: "Submit your event details via our official Google Form or email directly for custom concert programming.",
-        embedUrl: customContent.socials?.googleFormEmbedUrl || defaultSiteConfig.googleForm.embedUrl,
-        directFormUrl: customContent.socials?.googleFormDirectUrl || defaultSiteConfig.googleForm.directFormUrl,
-        contactEmail: customContent.socials?.email || defaultSiteConfig.socials.email
+        embedUrl: effectiveContent.socials?.googleFormEmbedUrl || defaultSiteConfig.googleForm.embedUrl,
+        directFormUrl: effectiveContent.socials?.googleFormDirectUrl || defaultSiteConfig.googleForm.directFormUrl,
+        contactEmail: effectiveContent.socials?.email || defaultSiteConfig.socials.email
       },
       emailForm: {
-        enabled: customContent.socials ? (customContent.socials.emailFormEnabled !== false) : (defaultSiteConfig.emailForm?.enabled !== false),
-        contactEmail: customContent.socials?.email || defaultSiteConfig.socials.email
+        enabled: effectiveContent.socials ? (effectiveContent.socials.emailFormEnabled !== false) : (defaultSiteConfig.emailForm?.enabled !== false),
+        contactEmail: effectiveContent.socials?.email || defaultSiteConfig.socials.email
       },
-      audioTracks: customContent.audio || defaultSiteConfig.audioTracks,
-      events: customContent.events || defaultSiteConfig.events,
-      gallery: customContent.gallery || defaultSiteConfig.gallery,
-      testimonials: customContent.testimonials || defaultSiteConfig.testimonials,
-      faqs: customContent.faqs || defaultSiteConfig.faqs
+      audioTracks: effectiveContent.audio || defaultSiteConfig.audioTracks,
+      events: effectiveContent.events || defaultSiteConfig.events,
+      gallery: effectiveContent.gallery || defaultSiteConfig.gallery,
+      testimonials: effectiveContent.testimonials || defaultSiteConfig.testimonials,
+      faqs: effectiveContent.faqs || defaultSiteConfig.faqs
     } : defaultSiteConfig),
     sectionConfig: currentConfig
   };

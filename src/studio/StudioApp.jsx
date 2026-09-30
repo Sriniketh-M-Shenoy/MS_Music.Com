@@ -1131,9 +1131,7 @@ export default function StudioApp({ onCloseStudio }) {
                           placeholder="Caption"
                           value={item.caption || ''}
                           onChange={e => {
-                            const newG = [...gallery];
-                            newG[index].caption = e.target.value;
-                            setGallery(newG);
+                            setGallery(gallery.map((g, i) => i === index ? { ...g, caption: e.target.value } : g));
                             markDirty();
                           }}
                           className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white outline-none"
@@ -1142,9 +1140,7 @@ export default function StudioApp({ onCloseStudio }) {
                           type="file"
                           accept="image/*"
                           onChange={e => handleFileUpload(e.target.files[0], url => {
-                            const newG = [...gallery];
-                            newG[index].url = url;
-                            setGallery(newG);
+                            setGallery(gallery.map((g, i) => i === index ? { ...g, url } : g));
                           })}
                           className="text-xs text-zinc-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:bg-amber-500/10 file:text-amber-400"
                         />
@@ -1173,9 +1169,7 @@ export default function StudioApp({ onCloseStudio }) {
                             placeholder="Title"
                             value={post.title || ''}
                             onChange={e => {
-                              const newP = [...posts];
-                              newP[index].title = e.target.value;
-                              setPosts(newP);
+                              setPosts(posts.map((p, i) => i === index ? { ...p, title: e.target.value } : p));
                               markDirty();
                             }}
                             className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold outline-none"
@@ -1185,9 +1179,7 @@ export default function StudioApp({ onCloseStudio }) {
                             placeholder="URL"
                             value={post.url || ''}
                             onChange={e => {
-                              const newP = [...posts];
-                              newP[index].url = e.target.value;
-                              setPosts(newP);
+                              setPosts(posts.map((p, i) => i === index ? { ...p, url: e.target.value } : p));
                               markDirty();
                             }}
                             className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none"
@@ -1197,9 +1189,7 @@ export default function StudioApp({ onCloseStudio }) {
                             placeholder="Description"
                             value={post.description || ''}
                             onChange={e => {
-                              const newP = [...posts];
-                              newP[index].description = e.target.value;
-                              setPosts(newP);
+                              setPosts(posts.map((p, i) => i === index ? { ...p, description: e.target.value } : p));
                               markDirty();
                             }}
                             className="md:col-span-2 bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none"
@@ -1252,9 +1242,7 @@ export default function StudioApp({ onCloseStudio }) {
                           rows={2}
                           value={item.quote || ''}
                           onChange={e => {
-                            const newT = [...testimonials];
-                            newT[index].quote = e.target.value;
-                            setTestimonials(newT);
+                            setTestimonials(testimonials.map((t, i) => i === index ? { ...t, quote: e.target.value } : t));
                             markDirty();
                           }}
                           className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none"
@@ -1265,9 +1253,7 @@ export default function StudioApp({ onCloseStudio }) {
                             placeholder="Name"
                             value={item.name || ''}
                             onChange={e => {
-                              const newT = [...testimonials];
-                              newT[index].name = e.target.value;
-                              setTestimonials(newT);
+                              setTestimonials(testimonials.map((t, i) => i === index ? { ...t, name: e.target.value } : t));
                               markDirty();
                             }}
                             className="bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none"
@@ -1277,9 +1263,7 @@ export default function StudioApp({ onCloseStudio }) {
                             placeholder="Role"
                             value={item.role || ''}
                             onChange={e => {
-                              const newT = [...testimonials];
-                              newT[index].role = e.target.value;
-                              setTestimonials(newT);
+                              setTestimonials(testimonials.map((t, i) => i === index ? { ...t, role: e.target.value } : t));
                               markDirty();
                             }}
                             className="bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none"
@@ -1289,9 +1273,7 @@ export default function StudioApp({ onCloseStudio }) {
                             placeholder="Location"
                             value={item.location || ''}
                             onChange={e => {
-                              const newT = [...testimonials];
-                              newT[index].location = e.target.value;
-                              setTestimonials(newT);
+                              setTestimonials(testimonials.map((t, i) => i === index ? { ...t, location: e.target.value } : t));
                               markDirty();
                             }}
                             className="bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none"
@@ -1330,9 +1312,7 @@ export default function StudioApp({ onCloseStudio }) {
                           type="text"
                           value={faq.q || ''}
                           onChange={e => {
-                            const newF = [...faqs];
-                            newF[index].q = e.target.value;
-                            setFaqs(newF);
+                            setFaqs(faqs.map((f, i) => i === index ? { ...f, q: e.target.value } : f));
                             markDirty();
                           }}
                           placeholder="Question"
@@ -1342,9 +1322,7 @@ export default function StudioApp({ onCloseStudio }) {
                           rows={2}
                           value={faq.a || ''}
                           onChange={e => {
-                            const newF = [...faqs];
-                            newF[index].a = e.target.value;
-                            setFaqs(newF);
+                            setFaqs(faqs.map((f, i) => i === index ? { ...f, a: e.target.value } : f));
                             markDirty();
                           }}
                           placeholder="Answer"

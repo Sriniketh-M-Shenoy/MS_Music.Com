@@ -97,10 +97,10 @@ export default function About({ onOpenBooking }) {
                     <span>Corporate Background</span>
                   </div>
                   <p className="text-xs text-white font-medium mb-1">
-                    Retired as Vice President – Sales
+                    {siteConfig.artist.corporateBackground || "Retired as Vice President – Sales"}
                   </p>
                   <p className="text-[11px] text-gray-400 font-mono">
-                    Canara Robeco Mutual Fund, Mangalore
+                    {siteConfig.artist.location || "Canara Robeco Mutual Fund, Mangalore"}
                   </p>
                 </div>
 
