@@ -42,6 +42,7 @@ export default function MusicShowcase() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
   const audioRef = useRef(null);
 
   const filteredTracks = selectedLanguage === 'All'
@@ -95,12 +96,18 @@ export default function MusicShowcase() {
     }
   };
 
-  const handleSeek = (e) => {
+  const handleSeekChange = (e) => {
+    const seekTime = parseFloat(e.target.value);
+    setCurrentTime(seekTime);
+  };
+
+  const handleSeekCommit = (e) => {
     const seekTime = parseFloat(e.target.value);
     if (audioRef.current) {
       audioRef.current.currentTime = seekTime;
       setCurrentTime(seekTime);
     }
+    setIsSeeking(false);
   };
 
   const toggleMute = () => {
@@ -116,7 +123,11 @@ export default function MusicShowcase() {
       {/* Hidden HTML5 Audio Element */}
       <audio
         ref={audioRef}
-        onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
+        onTimeUpdate={() => {
+          if (!isSeeking && audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime || 0);
+          }
+        }}
         onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
         onEnded={() => setIsPlaying(false)}
       />
@@ -314,8 +325,12 @@ export default function MusicShowcase() {
                   min="0"
                   max={duration || 100}
                   value={currentTime}
-                  onChange={handleSeek}
-                  className="w-full h-1 bg-zinc-700 accent-amber-500 rounded-lg cursor-pointer"
+                  onMouseDown={() => setIsSeeking(true)}
+                  onTouchStart={() => setIsSeeking(true)}
+                  onChange={handleSeekChange}
+                  onMouseUp={handleSeekCommit}
+                  onTouchEnd={handleSeekCommit}
+                  className="w-full h-1.5 bg-zinc-700 accent-amber-500 rounded-lg cursor-pointer transition-all"
                 />
                 <span>{formatTime(duration)}</span>
               </div>
