@@ -5,11 +5,11 @@ import picMicBlack from '../assets/gallery/pic_mic_black.png';
 export const audioTracksContent = [
   {
     id: 1,
-    title: "Jabdeep Jale Aana",
-    genre: "Malayalam Classic",
-    language: "Malayalam",
+    title: "Neela Vaana Odayil",
+    genre: "Tamil Classic",
+    language: "Tamil",
     duration: "04:15",
-    spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
+    spotifyUrl: "",
     audioUrl: "/uploads/Neelavaana_Odayil_Appa_mix_v1.m4a",
     coverImage: "http://localhost:3001/assets/pic_singing_mic-DaQs1ya9.png"
   },
