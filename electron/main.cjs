@@ -5,7 +5,26 @@ const fs = require('fs');
 // Direct import of studio API server to ensure 100% reliable local server availability
 import('../studio/server.js').catch(err => console.error('Studio server start error:', err));
 
-const ROOT_DIR = path.resolve(__dirname, '..');
+const ABSOLUTE_PROJECT_DIR = '/Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website';
+
+let ROOT_DIR = path.resolve(__dirname, '..');
+if (ROOT_DIR.includes('app.asar')) {
+  const asarIndex = ROOT_DIR.indexOf('.app/Contents/Resources/app.asar');
+  if (asarIndex !== -1) {
+    const parentDir = path.resolve(ROOT_DIR.substring(0, asarIndex + 4), '..');
+    if (fs.existsSync(path.join(parentDir, 'package.json'))) {
+      ROOT_DIR = parentDir;
+    } else if (fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
+      ROOT_DIR = ABSOLUTE_PROJECT_DIR;
+    } else {
+      ROOT_DIR = parentDir;
+    }
+  }
+}
+
+if (!fs.existsSync(path.join(ROOT_DIR, 'package.json')) && fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
+  ROOT_DIR = ABSOLUTE_PROJECT_DIR;
+}
 let mainWindow = null;
 const SERVER_PORT = 3001;
 

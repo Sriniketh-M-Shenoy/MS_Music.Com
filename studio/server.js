@@ -4,19 +4,29 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const ABSOLUTE_PROJECT_DIR = '/Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website';
+
 let ROOT_DIR = path.resolve(__dirname, '..');
 
-// Handle execution from inside packaged Electron app.asar
+// Handle execution from inside packaged Electron app.asar or moved app bundle
 if (ROOT_DIR.includes('app.asar')) {
   const asarIndex = ROOT_DIR.indexOf('.app/Contents/Resources/app.asar');
   if (asarIndex !== -1) {
-    const appBundlePath = ROOT_DIR.substring(0, asarIndex + 4);
-    ROOT_DIR = path.resolve(appBundlePath, '..');
+    const parentDir = path.resolve(ROOT_DIR.substring(0, asarIndex + 4), '..');
+    if (fs.existsSync(path.join(parentDir, 'src', 'content'))) {
+      ROOT_DIR = parentDir;
+    } else if (fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
+      ROOT_DIR = ABSOLUTE_PROJECT_DIR;
+    } else {
+      ROOT_DIR = parentDir;
+    }
   } else {
     ROOT_DIR = process.cwd();
   }
+}
+
+if (!fs.existsSync(path.join(ROOT_DIR, 'src', 'content')) && fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
+  ROOT_DIR = ABSOLUTE_PROJECT_DIR;
 }
 
 const PORT = process.env.PORT || 3001;
