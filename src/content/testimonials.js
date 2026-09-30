@@ -12,9 +12,9 @@ export const testimonialsContent = [
     location: "Mangaluru"
   },
   {
-    quote: "New quote...",
-    name: "Name",
-    role: "Role",
-    location: "City"
+    quote: "test",
+    name: "test",
+    role: "test",
+    location: "test"
   }
 ];
