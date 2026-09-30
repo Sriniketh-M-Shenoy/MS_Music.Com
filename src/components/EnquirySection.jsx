@@ -61,14 +61,34 @@ export default function EnquirySection() {
     message: ''
   });
 
+  const [submitted, setSubmitted] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyEmailToClipboard = (e) => {
+    if (e) e.preventDefault();
+    const email = siteConfig.socials?.email || "booking.muralidharshenoy@gmail.com";
+    try {
+      navigator.clipboard.writeText(email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch (err) {}
+    window.location.href = `mailto:${email}`;
+  };
+
   const handleDirectSubmit = (e) => {
     e.preventDefault();
     setSubmitted(true);
+    const email = siteConfig.socials?.email || "booking.muralidharshenoy@gmail.com";
     const subject = encodeURIComponent(`Concert Booking Enquiry from ${formData.name}`);
     const body = encodeURIComponent(
       `Hello Muralidhar Shenoy,\n\nI would like to enquire about booking a concert / performance.\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone Number: ${formData.phone}\nProposed Concert Date: ${formData.eventDate || 'Not specified'}\nProposed Concert Time: ${formData.eventTime || 'Not specified'}\n\nEnquiry Details:\n${formData.message}\n\nBest regards,\n${formData.name}`
     );
-    window.location.href = `mailto:${siteConfig.socials.email}?subject=${subject}&body=${body}`;
+
+    try {
+      navigator.clipboard.writeText(`To: ${email}\nSubject: Concert Booking Enquiry\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nProposed Date: ${formData.eventDate || 'N/A'}\nProposed Time: ${formData.eventTime || 'N/A'}\nDetails:\n${formData.message}`);
+    } catch (err) {}
+
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
   const showBothTabs = isGoogleFormEnabled && isEmailFormEnabled;
@@ -106,19 +126,21 @@ export default function EnquirySection() {
         {/* Direct Email Badge Card */}
         {isEmailFormEnabled && (
           <div className="max-w-md mx-auto mb-8 sm:mb-12">
-            <motion.a
+            <motion.div
               whileHover={{ y: -4 }}
-              href={`mailto:${siteConfig.socials.email}`}
-              className="apple-bento p-5 sm:p-6 border border-white/10 hover:border-white/30 flex items-center justify-center gap-4 transition-colors group text-center"
+              onClick={copyEmailToClipboard}
+              className="apple-bento p-5 sm:p-6 border border-white/10 hover:border-amber-400/50 flex items-center justify-center gap-4 transition-all group text-center cursor-pointer"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 group-hover:bg-white group-hover:text-black transition-colors flex-shrink-0">
-                <Mail className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors flex-shrink-0">
+                {copied ? <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 group-hover:text-black" /> : <Mail className="w-5 h-5 sm:w-6 sm:h-6" />}
               </div>
               <div className="text-left overflow-hidden">
-                <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-400 font-bold block mb-1">Direct Official Email</span>
-                <p className="text-xs sm:text-sm text-white font-medium truncate">{siteConfig.socials.email}</p>
+                <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-amber-400 font-bold block mb-1">
+                  {copied ? "✓ Email Copied to Clipboard!" : "Click to Email Directly / Copy Email"}
+                </span>
+                <p className="text-xs sm:text-sm text-white font-medium truncate">{siteConfig.socials?.email || "booking.muralidharshenoy@gmail.com"}</p>
               </div>
-            </motion.a>
+            </motion.div>
           </div>
         )}
 
@@ -184,19 +206,17 @@ export default function EnquirySection() {
                 <iframe
                   key={embedUrl}
                   src={embedUrl}
-                  className="w-full h-[680px] sm:h-[750px] border-0"
-                  title="Official Google Booking Form"
+                  title="Official Google Performance Booking Form"
+                  className="w-full h-[680px] sm:h-[750px] border-0 rounded-2xl"
+                  loading="lazy"
                 >
-                  Loading Google Form...
+                  Loading Google Booking Form...
                 </iframe>
               </div>
             ) : (
-              <div className="text-center py-12 bg-white/5 rounded-2xl border border-white/10 p-6 space-y-4">
-                <FileSpreadsheet className="w-12 h-12 text-amber-400 mx-auto" />
-                <h4 className="font-bold text-white text-base">Google Form Available</h4>
-                <p className="text-xs text-gray-400 max-w-md mx-auto">
-                  Click below to open our official Google Form directly:
-                </p>
+              <div className="text-center py-12 space-y-4">
+                <FileSpreadsheet className="w-12 h-12 text-amber-400 mx-auto opacity-70" />
+                <p className="text-sm text-gray-300">Open the official Google Form directly in a new tab:</p>
                 {directUrl && (
                   <a
                     href={directUrl}
@@ -224,10 +244,10 @@ export default function EnquirySection() {
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <h3 className="font-sans text-3xl font-bold text-white">
-                  Enquiry Email Prepared
+                  Enquiry Email Prepared & Copied!
                 </h3>
                 <p className="text-gray-300 text-sm max-w-md mx-auto leading-relaxed">
-                  Thank you! Your booking enquiry has been formatted and opened in your email client to send directly to Muralidhar Shenoy.
+                  Your booking details have been formatted, copied to your clipboard, and opened in your email client to send directly.
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
@@ -323,18 +343,16 @@ export default function EnquirySection() {
                       <span>Enquire About The Concert / Details *</span>
                     </label>
                     <textarea
+                      rows={4}
                       required
-                      rows="5"
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       placeholder="Tell us about the event, proposed dates, location, music preferences, or any specific questions..."
-                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors resize-y"
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors"
                     />
                   </div>
-
                 </div>
 
-                {/* Submit Button */}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -357,9 +375,12 @@ export default function EnquirySection() {
             <p className="text-sm text-gray-400 max-w-md mx-auto">
               Concert booking form submissions are currently closed. For direct queries, reach out at:
             </p>
-            <a href={`mailto:${siteConfig.socials.email}`} className="text-amber-400 font-mono text-sm underline font-bold inline-block pt-1">
-              {siteConfig.socials.email}
-            </a>
+            <button
+              onClick={copyEmailToClipboard}
+              className="text-amber-400 font-mono text-sm underline font-bold inline-block pt-1 cursor-pointer"
+            >
+              {siteConfig.socials?.email || "booking.muralidharshenoy@gmail.com"}
+            </button>
           </div>
         )}
 
@@ -367,4 +388,3 @@ export default function EnquirySection() {
     </section>
   );
 }
-
