@@ -33,22 +33,23 @@ function createWindow() {
     }
   });
 
+  const studioUrl = `http://localhost:${SERVER_PORT}?mode=studio`;
   const distIndexPath = path.join(ROOT_DIR, 'dist', 'index.html');
 
-  if (fs.existsSync(distIndexPath)) {
-    mainWindow.loadFile(distIndexPath, { query: { mode: 'studio' } });
-  } else {
-    const studioUrl = `http://localhost:${SERVER_PORT}?mode=studio`;
-    const loadAppUrl = () => {
-      if (!mainWindow || mainWindow.isDestroyed()) return;
-      mainWindow.loadURL(studioUrl).catch(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          setTimeout(loadAppUrl, 500);
-        }
-      });
-    };
-    setTimeout(loadAppUrl, 500);
-  }
+  let attempts = 0;
+  const loadAppUrl = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.loadURL(studioUrl).catch(() => {
+      attempts++;
+      if (attempts < 10) {
+        setTimeout(loadAppUrl, 250);
+      } else if (fs.existsSync(distIndexPath)) {
+        mainWindow.loadFile(distIndexPath, { query: { mode: 'studio' } });
+      }
+    });
+  };
+
+  loadAppUrl();
 
   // Application menu
   const menuTemplate = [

@@ -3,13 +3,19 @@ import StudioApp from './studio/StudioApp';
 import MainSiteView from './components/MainSiteView';
 
 export default function App() {
-  const [isStudioOpen, setIsStudioOpen] = useState(
-    typeof window !== 'undefined' && window.location.search.includes('mode=studio')
+  const isElectron = typeof window !== 'undefined' && (
+    window.navigator.userAgent.includes('Electron') || 
+    window.location.protocol === 'file:'
   );
 
   const isLocalHost = typeof window !== 'undefined' && (
     window.location.hostname === 'localhost' || 
-    window.location.hostname === '127.0.0.1'
+    window.location.hostname === '127.0.0.1' ||
+    isElectron
+  );
+
+  const [isStudioOpen, setIsStudioOpen] = useState(
+    (typeof window !== 'undefined' && window.location.search.includes('mode=studio')) || isElectron
   );
 
   if (isStudioOpen) {
