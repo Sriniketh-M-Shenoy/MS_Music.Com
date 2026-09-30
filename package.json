@@ -10,7 +10,7 @@
     "app": "electron .",
     "studio": "npm run app",
     "build": "vite build",
-    "build:mac": "npm run build && electron-builder --mac dir && cp -R \"release/mac-arm64/MS Music Studio.app\" ./ && xattr -cr \"./MS Music Studio.app\"",
+    "build:mac": "npm run build && electron-builder --mac dir && rm -rf \"./MS Music Studio.app\" && cp -R \"release/mac-arm64/MS Music Studio.app\" ./ && xattr -cr \"./MS Music Studio.app\"",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
