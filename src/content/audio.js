@@ -32,15 +32,5 @@ export const audioTracksContent = [
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "",
     coverImage: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_mic_black-DOqHKaUO.png"
-  },
-  {
-    id: 1790801389603,
-    title: "Neelavaana Odayil",
-    genre: "Film",
-    language: "Tamil",
-    duration: "03:30",
-    spotifyUrl: "",
-    audioUrl: "/uploads/Neelavaana_Odayil_Appa_mix_v1_1790801427869.aif",
-    coverImage: picSingingMic
   }
 ];
