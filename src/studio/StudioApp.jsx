@@ -1264,11 +1264,13 @@ export default function StudioApp({ onCloseStudio }) {
                         <span className="text-[11px] text-zinc-400">Embed official Google Form in the website booking section</span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => {
-                          setSocials({ ...socials, googleFormEnabled: socials.googleFormEnabled === false ? true : false });
+                          const isCurrentlyEnabled = socials.googleFormEnabled !== false;
+                          setSocials({ ...socials, googleFormEnabled: !isCurrentlyEnabled });
                           markDirty();
                         }}
-                        className={`w-12 h-6 rounded-full transition-all relative p-0.5 ${
+                        className={`w-12 h-6 rounded-full transition-all relative p-0.5 cursor-pointer ${
                           socials.googleFormEnabled !== false ? 'bg-amber-500' : 'bg-zinc-800'
                         }`}
                       >
@@ -1284,11 +1286,13 @@ export default function StudioApp({ onCloseStudio }) {
                         <span className="text-[11px] text-zinc-400">Allow visitors to submit direct email booking enquiries</span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => {
-                          setSocials({ ...socials, emailFormEnabled: socials.emailFormEnabled === false ? true : false });
+                          const isCurrentlyEnabled = socials.emailFormEnabled !== false;
+                          setSocials({ ...socials, emailFormEnabled: !isCurrentlyEnabled });
                           markDirty();
                         }}
-                        className={`w-12 h-6 rounded-full transition-all relative p-0.5 ${
+                        className={`w-12 h-6 rounded-full transition-all relative p-0.5 cursor-pointer ${
                           socials.emailFormEnabled !== false ? 'bg-amber-500' : 'bg-zinc-800'
                         }`}
                       >

@@ -161,6 +161,7 @@ export default function EnquirySection() {
             {siteConfig.googleForm?.embedUrl ? (
               <div className="w-full bg-white/5 rounded-2xl overflow-hidden border border-white/10 shadow-inner">
                 <iframe
+                  key={siteConfig.googleForm?.embedUrl || 'google-form-iframe'}
                   src={siteConfig.googleForm.embedUrl}
                   className="w-full h-[680px] sm:h-[750px] border-0"
                   title="Official Google Booking Form"

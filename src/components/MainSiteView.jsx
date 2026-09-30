@@ -46,8 +46,8 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
       enabled: customContent.socials ? (customContent.socials.googleFormEnabled !== false) : defaultSiteConfig.googleForm.enabled,
       title: "Booking Enquiry & Performance Request",
       description: "Submit your event details via our official Google Form or email directly for custom concert programming.",
-      embedUrl: customContent.socials?.googleFormEmbedUrl || defaultSiteConfig.googleForm.embedUrl,
-      directFormUrl: customContent.socials?.googleFormDirectUrl || defaultSiteConfig.googleForm.directFormUrl,
+      embedUrl: customContent.socials?.googleFormEmbedUrl !== undefined ? customContent.socials.googleFormEmbedUrl : defaultSiteConfig.googleForm.embedUrl,
+      directFormUrl: customContent.socials?.googleFormDirectUrl !== undefined ? customContent.socials.googleFormDirectUrl : defaultSiteConfig.googleForm.directFormUrl,
       contactEmail: customContent.socials?.email || defaultSiteConfig.socials.email
     },
     emailForm: {

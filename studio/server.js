@@ -172,6 +172,9 @@ export const aboutContent = {
 }
 
 function generateSocialsJs(data) {
+  const isGoogleFormEnabled = data.googleFormEnabled === true || data.googleFormEnabled === 'true' || data.googleFormEnabled === undefined;
+  const isEmailFormEnabled = data.emailFormEnabled !== false && data.emailFormEnabled !== 'false';
+
   return `export const socialsContent = {
   spotify: ${JSON.stringify(data.spotify || "")},
   instagram: ${JSON.stringify(data.instagram || "")},
@@ -180,10 +183,10 @@ function generateSocialsJs(data) {
   facebook: ${JSON.stringify(data.facebook || "")},
   email: ${JSON.stringify(data.email || "")},
   youtubeHandle: ${JSON.stringify(data.youtubeHandle || "@muralidharshenoykochi")},
-  googleFormEnabled: ${data.googleFormEnabled !== false},
-  googleFormEmbedUrl: ${JSON.stringify(data.googleFormEmbedUrl || "")},
-  googleFormDirectUrl: ${JSON.stringify(data.googleFormDirectUrl || "")},
-  emailFormEnabled: ${data.emailFormEnabled !== false}
+  googleFormEnabled: ${isGoogleFormEnabled},
+  googleFormEmbedUrl: ${JSON.stringify(data.googleFormEmbedUrl !== undefined ? data.googleFormEmbedUrl : "")},
+  googleFormDirectUrl: ${JSON.stringify(data.googleFormDirectUrl !== undefined ? data.googleFormDirectUrl : "")},
+  emailFormEnabled: ${isEmailFormEnabled}
 };`;
 }
 
