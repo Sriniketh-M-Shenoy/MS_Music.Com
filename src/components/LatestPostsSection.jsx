@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Youtube, Instagram, Facebook, ArrowUpRight } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function LatestPostsSection() {
   const siteConfig = useSiteConfig();
@@ -59,7 +60,7 @@ export default function LatestPostsSection() {
               {/* Thumbnail Container */}
               <div className="h-60 overflow-hidden relative bg-neutral-950">
                 <img
-                  src={post.thumbnail}
+                  src={resolveImageSrc(post.thumbnail)}
                   alt={post.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-85"
                 />

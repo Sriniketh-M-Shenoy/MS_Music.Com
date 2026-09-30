@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function Hero({ onOpenBooking }) {
   const siteConfig = useSiteConfig();
@@ -34,7 +35,7 @@ export default function Hero({ onOpenBooking }) {
       {/* Background Artist Image */}
       <div className="absolute inset-0 z-0">
         <img
-          src={siteConfig.artist.heroImage}
+          src={resolveImageSrc(siteConfig.artist.heroImage)}
           alt={siteConfig.artist.name}
           className="w-full h-full object-cover object-[70%_center] md:object-right opacity-80 filter brightness-105"
         />

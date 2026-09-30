@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Maximize2 } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function Gallery() {
   const siteConfig = useSiteConfig();
@@ -68,7 +69,7 @@ export default function Gallery() {
               >
                 <div className="h-64 sm:h-80 overflow-hidden relative">
                   <img
-                    src={item.url}
+                    src={resolveImageSrc(item.url)}
                     alt={item.caption}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
                   />
@@ -110,7 +111,7 @@ export default function Gallery() {
                 className="max-w-5xl w-full apple-bento p-3 sm:p-4 border border-white/20 overflow-hidden"
               >
                 <img
-                  src={activeImage.url}
+                  src={resolveImageSrc(activeImage.url)}
                   alt={activeImage.caption || 'Gallery Image'}
                   className="w-full max-h-[75vh] sm:max-h-[82vh] object-contain rounded-2xl"
                 />

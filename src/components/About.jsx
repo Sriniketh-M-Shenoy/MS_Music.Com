@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Music, ChevronRight } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function About({ onOpenBooking }) {
   const siteConfig = useSiteConfig();
@@ -34,7 +35,7 @@ export default function About({ onOpenBooking }) {
             className="lg:col-span-5 apple-bento p-2.5 sm:p-3 relative overflow-hidden group min-h-[320px] sm:min-h-[480px]"
           >
             <img
-              src={siteConfig.artist.portraitImage}
+              src={resolveImageSrc(siteConfig.artist.portraitImage)}
               alt={siteConfig.artist.name}
               className="w-full h-full object-cover rounded-2xl group-hover:scale-105 transition-transform duration-700 opacity-90"
             />

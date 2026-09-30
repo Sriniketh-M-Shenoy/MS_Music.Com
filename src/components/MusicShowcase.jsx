@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Play, ExternalLink, Music2 } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function MusicShowcase() {
   const siteConfig = useSiteConfig();
@@ -124,7 +125,7 @@ export default function MusicShowcase() {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl overflow-hidden relative flex-shrink-0 border border-white/10">
-                    <img src={track.coverImage} alt={track.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <img src={resolveImageSrc(track.coverImage)} alt={track.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                       <Music2 className="w-5 h-5 text-[#1DB954]" />
                     </div>

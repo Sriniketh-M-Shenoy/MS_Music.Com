@@ -1,6 +1,7 @@
 import React from 'react';
 import { Instagram, Facebook, Youtube, ArrowUp } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function Footer() {
   const siteConfig = useSiteConfig();
@@ -16,7 +17,7 @@ export default function Footer() {
           
           <div className="sm:col-span-2 md:col-span-5 space-y-4">
             <img
-              src={siteConfig.artist.signatureImage}
+              src={resolveImageSrc(siteConfig.artist.signatureImage)}
               alt="Muralidhar Shenoy Signature"
               className="h-14 sm:h-18 w-auto object-contain -ml-2 opacity-95"
             />

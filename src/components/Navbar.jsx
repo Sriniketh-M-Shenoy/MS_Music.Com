@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function Navbar({ onOpenBooking }) {
   const siteConfig = useSiteConfig();
@@ -47,7 +48,7 @@ export default function Navbar({ onOpenBooking }) {
 
             {/* Mobile Signature Logo (only for phone screens) */}
             <img
-              src={siteConfig.artist.signatureImage}
+              src={resolveImageSrc(siteConfig.artist.signatureImage)}
               alt="Muralidhar Shenoy Signature"
               className="inline-block md:hidden h-7 sm:h-8 w-auto object-contain filter brightness-125"
             />
@@ -70,7 +71,7 @@ export default function Navbar({ onOpenBooking }) {
           {/* Right Action Button & Signature */}
           <div className="hidden md:flex items-center gap-5">
             <img
-              src={siteConfig.artist.signatureImage}
+              src={resolveImageSrc(siteConfig.artist.signatureImage)}
               alt="Muralidhar Shenoy Signature"
               className="h-9 lg:h-11 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
             />
