@@ -11,8 +11,15 @@ function resolveAudioSrc(url) {
     return trimmed;
   }
   if (trimmed.startsWith('/uploads/')) {
-    if (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '3000' || window.location.port === '4173')) {
-      return `http://localhost:3001${trimmed}`;
+    if (typeof window !== 'undefined') {
+      const isDev = window.location.port === '5173' || window.location.port === '3000' || window.location.port === '4173';
+      const isElectron = window.location.protocol === 'file:' || window.location.hostname === '';
+      if (isDev || isElectron) {
+        return `http://localhost:3001${trimmed}`;
+      }
+      const base = import.meta.env.BASE_URL || './';
+      const cleanBase = base.endsWith('/') ? base : `${base}/`;
+      return `${cleanBase}${trimmed.replace(/^\//, '')}`;
     }
   }
   return trimmed;

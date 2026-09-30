@@ -5,13 +5,13 @@ import picMicBlack from '../assets/gallery/pic_mic_black.png';
 export const audioTracksContent = [
   {
     id: 1,
-    title: "Indravallari Poochoodivarum",
+    title: "Neelavaana Odayil (Appa Mix)",
     genre: "Malayalam Classic",
     language: "Malayalam",
     duration: "04:15",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
-    audioUrl: "",
-    coverImage: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_singing_mic-DaQs1ya9.png"
+    audioUrl: "/uploads/Neelavaana_Odayil_Appa_mix_v1_1790801427869.aif",
+    coverImage: picSingingMic
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ export const audioTracksContent = [
     duration: "03:45",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "",
-    coverImage: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_red_kurta-BKZBaEDj.png"
+    coverImage: picRedKurta
   },
   {
     id: 3,
@@ -31,6 +31,6 @@ export const audioTracksContent = [
     duration: "05:10",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "",
-    coverImage: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_mic_black-DOqHKaUO.png"
+    coverImage: picMicBlack
   }
 ];
