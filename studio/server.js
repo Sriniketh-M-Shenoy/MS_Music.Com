@@ -307,6 +307,15 @@ function generateSectionConfigJs(data) {
   return `export const sectionConfig = ${JSON.stringify(data, null, 2)};`;
 }
 
+function autoPullLatest() {
+  try {
+    execSync('git pull origin main', { cwd: ROOT_DIR });
+    console.log('[MS Studio API] Auto-pulled latest remote changes.');
+  } catch (err) {
+    console.warn('[MS Studio API] Auto-pull skipped:', err.message);
+  }
+}
+
 // Server router
 const server = http.createServer(async (req, res) => {
   setCorsHeaders(res);
@@ -321,6 +330,19 @@ const server = http.createServer(async (req, res) => {
   const pathname = parsedUrl.pathname;
 
   try {
+    // 0. GET /api/git-pull
+    if (pathname === '/api/git-pull' && req.method === 'GET') {
+      try {
+        execSync('git pull origin main', { cwd: ROOT_DIR });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Successfully pulled latest changes' }));
+      } catch (pullErr) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: pullErr.message }));
+      }
+      return;
+    }
+
     // 1. GET /api/git-status
     if (pathname === '/api/git-status' && req.method === 'GET') {
       let branch = 'main';
