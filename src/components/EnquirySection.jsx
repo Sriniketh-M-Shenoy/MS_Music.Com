@@ -18,15 +18,20 @@ function formatGoogleFormEmbedUrl(url) {
 export default function EnquirySection() {
   const siteConfig = useSiteConfig();
 
-  const rawEmbedUrl = siteConfig.googleForm?.embedUrl || siteConfig.googleForm?.directFormUrl || '';
+  const defaultEmbedUrl = "https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?embedded=true";
+  const defaultDirectUrl = "https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?pli=1";
+
+  const rawEmbedUrl = siteConfig.googleForm?.embedUrl || siteConfig.socials?.googleFormEmbedUrl || defaultEmbedUrl;
   const embedUrl = formatGoogleFormEmbedUrl(rawEmbedUrl);
-  const directUrl = siteConfig.googleForm?.directFormUrl || rawEmbedUrl || '';
+  const directUrl = siteConfig.googleForm?.directFormUrl || siteConfig.socials?.googleFormDirectUrl || defaultDirectUrl;
 
   const isGoogleFormEnabled = Boolean(
-    siteConfig.googleForm?.enabled && (embedUrl || directUrl)
+    siteConfig.googleForm?.enabled !== false && siteConfig.socials?.googleFormEnabled !== false
   );
 
-  const isEmailFormEnabled = Boolean(siteConfig.emailForm?.enabled !== false);
+  const isEmailFormEnabled = Boolean(
+    siteConfig.emailForm?.enabled !== false && siteConfig.socials?.emailFormEnabled !== false
+  );
 
   const [activeFormTab, setActiveFormTab] = useState(() => {
     if (isGoogleFormEnabled) return 'google';
