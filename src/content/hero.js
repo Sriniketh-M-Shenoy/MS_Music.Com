@@ -8,5 +8,5 @@ export const heroContent = {
   subtitle: "Devotional, Light & Classical Vocal Performance",
   heroImage: heroBg,
   signatureImage: msSignature,
-  bookingButtonText: "Booking Enquiry",
+  bookingButtonText: "Booking Enquiry"
 };

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Instagram, Facebook, Youtube, ArrowUp } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function Footer() {
+  const siteConfig = useSiteConfig();
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

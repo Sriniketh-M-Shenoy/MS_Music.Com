@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Youtube, Instagram, Facebook, ArrowUpRight } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function LatestPostsSection() {
+  const siteConfig = useSiteConfig();
   const getIcon = (platform) => {
     switch (platform.toLowerCase()) {
       case 'youtube': return <Youtube className="w-5 h-5 text-red-500" />;

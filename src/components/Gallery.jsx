@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Maximize2 } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function Gallery() {
+  const siteConfig = useSiteConfig();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeImage, setActiveImage] = useState(null);
 

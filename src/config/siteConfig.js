@@ -13,6 +13,8 @@
  * - src/content/faqs.js
  */
 
+import React, { createContext, useContext } from 'react';
+
 import {
   heroContent,
   aboutContent,
@@ -42,11 +44,15 @@ export const siteConfig = {
 
   // 4. GOOGLE FORM & BOOKING ENQUIRY CONFIGURATION
   googleForm: {
-    enabled: true,
+    enabled: socialsContent.googleFormEnabled !== false,
     title: "Booking Enquiry & Performance Request",
     description: "Submit your event details via our official Google Form or email directly for custom concert programming.",
-    embedUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfDdummyFormIdHere/viewform?embedded=true", 
-    directFormUrl: "https://forms.google.com/your-google-form-link-here",
+    embedUrl: socialsContent.googleFormEmbedUrl || "https://docs.google.com/forms/d/e/1FAIpQLSfDdummyFormIdHere/viewform?embedded=true", 
+    directFormUrl: socialsContent.googleFormDirectUrl || "https://forms.google.com/your-google-form-link-here",
+    contactEmail: socialsContent.email
+  },
+  emailForm: {
+    enabled: socialsContent.emailFormEnabled !== false,
     contactEmail: socialsContent.email
   },
 
@@ -65,3 +71,12 @@ export const siteConfig = {
   // 9. FREQUENTLY ASKED QUESTIONS (from src/content/faqs.js)
   faqs: faqsContent
 };
+
+// React Context for live dynamic updates during studio editing & preview
+export const SiteConfigContext = createContext(null);
+
+export function useSiteConfig() {
+  const custom = useContext(SiteConfigContext);
+  return custom || siteConfig;
+}
+

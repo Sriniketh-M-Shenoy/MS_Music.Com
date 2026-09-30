@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Youtube, Instagram, Facebook, Music2, BellRing, Disc3, ArrowUpRight } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function SocialsSection() {
+  const siteConfig = useSiteConfig();
   return (
     <section id="socials" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">

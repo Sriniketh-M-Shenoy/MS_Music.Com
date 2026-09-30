@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function Navbar({ onOpenBooking }) {
+  const siteConfig = useSiteConfig();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

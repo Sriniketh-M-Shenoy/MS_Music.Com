@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function Testimonials() {
+  const siteConfig = useSiteConfig();
   return (
     <section id="testimonials" className="py-32 relative bg-black border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">

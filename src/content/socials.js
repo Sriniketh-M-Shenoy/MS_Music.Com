@@ -6,4 +6,7 @@ export const socialsContent = {
   facebook: "https://www.facebook.com/muralidhar.g.shenoy/",
   email: "booking.muralidharshenoy@gmail.com",
   youtubeHandle: "@muralidharshenoykochi",
+  googleFormEnabled: false,
+  googleFormEmbedUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfDdummyFormIdHere/viewform?embedded=true",
+  googleFormDirectUrl: "https://forms.google.com/your-google-form-link-here"
 };

@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function Hero({ onOpenBooking }) {
+  const siteConfig = useSiteConfig();
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -23,6 +25,8 @@ export default function Hero({ onOpenBooking }) {
       transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
     }
   };
+
+  const nameWords = (siteConfig.artist.name || "Muralidhar Shenoy").split(' ');
 
   return (
     <section className="relative min-h-[85vh] sm:min-h-[88vh] flex flex-col justify-end pt-28 sm:pt-32 pb-16 sm:pb-20 overflow-hidden bg-black">
@@ -62,7 +66,12 @@ export default function Hero({ onOpenBooking }) {
           variants={itemVariants}
           className="font-sans text-4xl xs:text-5xl sm:text-7xl lg:text-9xl font-extrabold tracking-tight text-white mb-3 leading-[1.05]"
         >
-          Muralidhar<br />Shenoy
+          {nameWords.map((word, i) => (
+            <React.Fragment key={i}>
+              {word}
+              {i < nameWords.length - 1 && <br />}
+            </React.Fragment>
+          ))}
         </motion.h1>
 
         {/* Title Tagline */}
@@ -70,7 +79,7 @@ export default function Hero({ onOpenBooking }) {
           variants={itemVariants}
           className="text-base sm:text-2xl lg:text-3xl font-medium text-gray-200 mb-8 sm:mb-10 tracking-tight max-w-4xl leading-snug"
         >
-          {siteConfig.artist.title}
+          {siteConfig.artist.tagline || siteConfig.artist.title}
         </motion.p>
 
         {/* Prominent Action Button */}
@@ -84,7 +93,7 @@ export default function Hero({ onOpenBooking }) {
             onClick={onOpenBooking}
             className="w-full sm:w-auto bg-white hover:bg-gray-200 text-black font-extrabold px-7 py-3.5 sm:px-9 sm:py-4 rounded-full text-sm sm:text-base transition-all shadow-2xl flex items-center justify-center gap-2"
           >
-            <span>Booking Enquiry</span>
+            <span>{siteConfig.artist.bookingButtonText || "Booking Enquiry"}</span>
             <ChevronRight className="w-5 h-5 text-black" />
           </motion.button>
         </motion.div>
@@ -93,3 +102,4 @@ export default function Hero({ onOpenBooking }) {
     </section>
   );
 }
+

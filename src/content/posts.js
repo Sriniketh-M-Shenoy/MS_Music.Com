@@ -9,7 +9,7 @@ export const latestPostsContent = [
     title: "Indravallari Poochoodivarum (K.J. Yesudas Tribute Cover)",
     type: "Latest Video",
     handle: "@muralidharshenoykochi",
-    thumbnail: picSingingMic,
+    thumbnail: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_singing_mic-DaQs1ya9.png",
     url: "https://www.youtube.com/@muralidharshenoykochi",
     actionText: "Watch Video on YouTube ↗",
     description: "Evergreen Malayalam classic film vocal rendition from Gandharva Kshetham, honoring legend K.J. Yesudas."
@@ -20,7 +20,7 @@ export const latestPostsContent = [
     title: "Yad Na Jaye Beete Dinon Ki - Studio Tribute Reel",
     type: "Latest Reel",
     handle: "@muralidhargshenoy",
-    thumbnail: picMicBlack,
+    thumbnail: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_mic_black-DOqHKaUO.png",
     url: "https://www.instagram.com/muralidhargshenoy/?hl=en",
     actionText: "View Reel on Instagram ↗",
     description: "Unplugged studio vocal performance paying tribute to legendary playback maestro Mohammed Rafi."
@@ -31,7 +31,7 @@ export const latestPostsContent = [
     title: "Amara Prabho & Konkani Devotional Haribhajan",
     type: "Latest Post",
     handle: "Muralidhar Shenoy",
-    thumbnail: picRedKurta,
+    thumbnail: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_red_kurta-BKZBaEDj.png",
     url: "https://www.facebook.com/muralidhar.g.shenoy/",
     actionText: "Read Post on Facebook ↗",
     description: "Soulful devotional vocal recital performed live for GSB community and temple celebrations."

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Play, ExternalLink, Music2 } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { useSiteConfig } from '../config/siteConfig';
 
 export default function MusicShowcase() {
+  const siteConfig = useSiteConfig();
   const [selectedLanguage, setSelectedLanguage] = useState('All');
 
   const filteredTracks = selectedLanguage === 'All'

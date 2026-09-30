@@ -10,7 +10,8 @@ export const audioTracksContent = [
     language: "Malayalam",
     duration: "04:15",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
-    coverImage: picSingingMic
+    audioUrl: "",
+    coverImage: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_singing_mic-DaQs1ya9.png"
   },
   {
     id: 2,
@@ -19,7 +20,8 @@ export const audioTracksContent = [
     language: "Konkani",
     duration: "03:45",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
-    coverImage: picRedKurta
+    audioUrl: "",
+    coverImage: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_red_kurta-BKZBaEDj.png"
   },
   {
     id: 3,
@@ -28,6 +30,7 @@ export const audioTracksContent = [
     language: "Hindi",
     duration: "05:10",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
-    coverImage: picMicBlack
+    audioUrl: "",
+    coverImage: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_mic_black-DOqHKaUO.png"
   }
 ];

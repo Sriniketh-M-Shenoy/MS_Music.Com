@@ -7,6 +7,7 @@ import { eventsContent } from './events';
 import { galleryContent } from './gallery';
 import { testimonialsContent } from './testimonials';
 import { faqsContent } from './faqs';
+import { sectionConfig } from './sectionConfig';
 
 export {
   heroContent,
@@ -17,5 +18,6 @@ export {
   eventsContent,
   galleryContent,
   testimonialsContent,
-  faqsContent
+  faqsContent,
+  sectionConfig
 };

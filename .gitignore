@@ -3,3 +3,6 @@ dist
 dist-ssr
 *.local
 .DS_Store
+release
+*.app
+MS Music Studio.app
