@@ -21,6 +21,7 @@ import {
 } from '../content';
 
 import MainSiteView from '../components/MainSiteView';
+import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 const API_BASE = 'http://localhost:3001';
 
