@@ -553,12 +553,37 @@ const server = http.createServer(async (req, res) => {
       }
 
       const uploadedFile = files[0];
-      const ext = path.extname(uploadedFile.originalFilename) || '.bin';
+      let ext = path.extname(uploadedFile.originalFilename) || '.bin';
       const cleanName = path.basename(uploadedFile.originalFilename, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = `${cleanName}_${Date.now()}${ext}`;
-      const savePath = path.join(UPLOADS_DIR, filename);
+      let filename = `${cleanName}_${Date.now()}${ext}`;
+      let savePath = path.join(UPLOADS_DIR, filename);
 
       fs.writeFileSync(savePath, uploadedFile.buffer);
+
+      const distUploadsDir = path.join(ROOT_DIR, 'dist', 'uploads');
+      try {
+        if (!fs.existsSync(distUploadsDir)) {
+          fs.mkdirSync(distUploadsDir, { recursive: true });
+        }
+        fs.writeFileSync(path.join(distUploadsDir, filename), uploadedFile.buffer);
+      } catch (dErr) {}
+
+      // Auto-convert .aif / .aiff to universal web-compatible .m4a format for HTML5 audio
+      if (ext.toLowerCase() === '.aif' || ext.toLowerCase() === '.aiff') {
+        try {
+          const m4aFilename = `${cleanName}_${Date.now()}.m4a`;
+          const m4aSavePath = path.join(UPLOADS_DIR, m4aFilename);
+          execSync(`afconvert -f m4af -d aac "${savePath}" "${m4aSavePath}"`, { cwd: ROOT_DIR });
+          if (fs.existsSync(m4aSavePath)) {
+            try {
+              fs.copyFileSync(m4aSavePath, path.join(distUploadsDir, m4aFilename));
+            } catch (cErr) {}
+            filename = m4aFilename;
+          }
+        } catch (convErr) {
+          console.warn('Audio conversion warning:', convErr.message);
+        }
+      }
 
       const publicUrl = `/uploads/${filename}`;
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -632,7 +657,10 @@ const server = http.createServer(async (req, res) => {
 
     // Static uploaded files serving
     if (pathname.startsWith('/uploads/')) {
-      const filePath = path.join(ROOT_DIR, 'public', pathname);
+      let filePath = path.join(ROOT_DIR, 'public', pathname);
+      if (!fs.existsSync(filePath)) {
+        filePath = path.join(ROOT_DIR, 'dist', pathname);
+      }
       if (fs.existsSync(filePath)) {
         const ext = path.extname(filePath).toLowerCase();
         const contentTypes = {
