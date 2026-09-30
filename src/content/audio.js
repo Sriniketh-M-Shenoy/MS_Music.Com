@@ -32,15 +32,5 @@ export const audioTracksContent = [
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "",
     coverImage: "http://localhost:3001/assets/pic_mic_black-DOqHKaUO.png"
-  },
-  {
-    id: 1790804056522,
-    title: "Asalayavale",
-    genre: "Film",
-    language: "Malayam",
-    duration: "03:30",
-    spotifyUrl: "",
-    audioUrl: "/uploads/Asalayavale_Srini_mix_v1_1790804106162.wav",
-    coverImage: picSingingMic
   }
 ];
