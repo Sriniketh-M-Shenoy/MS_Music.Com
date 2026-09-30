@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Send, CheckCircle2, Phone, User, MessageSquare, ExternalLink, FileSpreadsheet } from 'lucide-react';
+import { Mail, Send, CheckCircle2, Phone, User, MessageSquare, ExternalLink, FileSpreadsheet, Calendar, Clock } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 
 export default function EnquirySection() {
@@ -32,11 +32,12 @@ export default function EnquirySection() {
     }
   }, [isGoogleFormEnabled, isEmailFormEnabled, activeFormTab]);
 
-  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
+    eventDate: '',
+    eventTime: '',
     message: ''
   });
 
@@ -45,7 +46,7 @@ export default function EnquirySection() {
     setSubmitted(true);
     const subject = encodeURIComponent(`Concert Booking Enquiry from ${formData.name}`);
     const body = encodeURIComponent(
-      `Hello Muralidhar Shenoy,\n\nI would like to enquire about booking a concert / performance.\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone Number: ${formData.phone}\n\nEnquiry Details:\n${formData.message}\n\nBest regards,\n${formData.name}`
+      `Hello Muralidhar Shenoy,\n\nI would like to enquire about booking a concert / performance.\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone Number: ${formData.phone}\nProposed Concert Date: ${formData.eventDate || 'Not specified'}\nProposed Concert Time: ${formData.eventTime || 'Not specified'}\n\nEnquiry Details:\n${formData.message}\n\nBest regards,\n${formData.name}`
     );
     window.location.href = `mailto:${siteConfig.socials.email}?subject=${subject}&body=${body}`;
   };
@@ -264,6 +265,34 @@ export default function EnquirySection() {
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+91 XXXXX XXXXX"
                       className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Proposed Concert Date */}
+                  <div>
+                    <label className="block text-xs uppercase font-mono tracking-wider text-gray-300 mb-2 font-semibold flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Proposed Concert Date</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.eventDate}
+                      onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors [color-scheme:dark]"
+                    />
+                  </div>
+
+                  {/* Proposed Concert Time */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs uppercase font-mono tracking-wider text-gray-300 mb-2 font-semibold flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Proposed Concert Time</span>
+                    </label>
+                    <input
+                      type="time"
+                      value={formData.eventTime}
+                      onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors [color-scheme:dark]"
                     />
                   </div>
 
