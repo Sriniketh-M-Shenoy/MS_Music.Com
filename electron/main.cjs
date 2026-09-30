@@ -1,18 +1,11 @@
-import { createRequire } from 'module';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-const require = createRequire(import.meta.url);
 const { app, BrowserWindow, Menu, shell, dialog, nativeImage } = require('electron');
+const path = require('path');
+const fs = require('fs');
 
 // Direct import of studio API server to ensure 100% reliable local server availability
-import '../studio/server.js';
+import('../studio/server.js').catch(err => console.error('Studio server start error:', err));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
-
 let mainWindow = null;
 const SERVER_PORT = 3001;
 
@@ -37,22 +30,17 @@ function createWindow() {
   });
 
   const studioUrl = `http://localhost:${SERVER_PORT}?mode=studio`;
-  const distIndexPath = path.join(ROOT_DIR, 'dist', 'index.html');
 
-  let attempts = 0;
   const loadAppUrl = () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.loadURL(studioUrl).catch(() => {
-      attempts++;
-      if (attempts < 10) {
-        setTimeout(loadAppUrl, 250);
-      } else if (fs.existsSync(distIndexPath)) {
-        mainWindow.loadFile(distIndexPath, { query: { mode: 'studio' } });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        setTimeout(loadAppUrl, 300);
       }
     });
   };
 
-  loadAppUrl();
+  setTimeout(loadAppUrl, 300);
 
   // Application menu
   const menuTemplate = [
