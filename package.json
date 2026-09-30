@@ -5,8 +5,8 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "concurrently \"node studio/server.js\" \"vite\"",
-    "server": "node studio/server.js",
+    "dev": "concurrently \"node studio/server.cjs\" \"vite\"",
+    "server": "node studio/server.cjs",
     "app": "electron .",
     "studio": "npm run app",
     "build": "vite build",

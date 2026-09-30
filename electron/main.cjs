@@ -2,8 +2,12 @@ const { app, BrowserWindow, Menu, shell, dialog, nativeImage } = require('electr
 const path = require('path');
 const fs = require('fs');
 
-// Direct import of studio API server to ensure 100% reliable local server availability
-import('../studio/server.js').catch(err => console.error('Studio server start error:', err));
+// Direct requirement of studio API server to ensure 100% reliable local server availability
+try {
+  require('../studio/server.cjs');
+} catch (err) {
+  console.error('Studio server start error:', err);
+}
 
 const ABSOLUTE_PROJECT_DIR = '/Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website';
 
