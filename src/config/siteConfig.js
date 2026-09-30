@@ -47,8 +47,8 @@ export const siteConfig = {
     enabled: socialsContent.googleFormEnabled !== false,
     title: "Booking Enquiry & Performance Request",
     description: "Submit your event details via our official Google Form or email directly for custom concert programming.",
-    embedUrl: socialsContent.googleFormEmbedUrl || "https://docs.google.com/forms/d/e/1FAIpQLSfDdummyFormIdHere/viewform?embedded=true", 
-    directFormUrl: socialsContent.googleFormDirectUrl || "https://forms.google.com/your-google-form-link-here",
+    embedUrl: socialsContent.googleFormEmbedUrl || "https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?embedded=true", 
+    directFormUrl: socialsContent.googleFormDirectUrl || "https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?pli=1",
     contactEmail: socialsContent.email
   },
   emailForm: {

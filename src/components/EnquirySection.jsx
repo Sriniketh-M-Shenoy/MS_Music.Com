@@ -3,12 +3,25 @@ import { motion } from 'framer-motion';
 import { Mail, Send, CheckCircle2, Phone, User, MessageSquare, ExternalLink, FileSpreadsheet, Calendar, Clock } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 
+function formatGoogleFormEmbedUrl(url) {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.includes('embedded=true')) return trimmed;
+  if (trimmed.includes('/viewform')) {
+    return trimmed.replace(/\/viewform(\?.*)?$/, '/viewform?embedded=true');
+  }
+  return trimmed;
+}
+
 export default function EnquirySection() {
   const siteConfig = useSiteConfig();
 
+  const rawEmbedUrl = siteConfig.googleForm?.embedUrl || siteConfig.googleForm?.directFormUrl || '';
+  const embedUrl = formatGoogleFormEmbedUrl(rawEmbedUrl);
+  const directUrl = siteConfig.googleForm?.directFormUrl || rawEmbedUrl || '';
+
   const isGoogleFormEnabled = Boolean(
-    siteConfig.googleForm?.enabled && 
-    (siteConfig.googleForm?.embedUrl || siteConfig.googleForm?.directFormUrl)
+    siteConfig.googleForm?.enabled && (embedUrl || directUrl)
   );
 
   const isEmailFormEnabled = Boolean(siteConfig.emailForm?.enabled !== false);
@@ -146,9 +159,9 @@ export default function EnquirySection() {
                 <p className="text-xs text-gray-400 mt-1">Fill out event requirements directly in our official Google Form.</p>
               </div>
 
-              {siteConfig.googleForm?.directFormUrl && (
+              {directUrl && (
                 <a
-                  href={siteConfig.googleForm.directFormUrl}
+                  href={directUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 bg-white/10 hover:bg-amber-500 hover:text-black text-amber-400 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-amber-400/30"
@@ -159,11 +172,11 @@ export default function EnquirySection() {
               )}
             </div>
 
-            {siteConfig.googleForm?.embedUrl ? (
+            {embedUrl ? (
               <div className="w-full bg-white/5 rounded-2xl overflow-hidden border border-white/10 shadow-inner">
                 <iframe
-                  key={siteConfig.googleForm?.embedUrl || 'google-form-iframe'}
-                  src={siteConfig.googleForm.embedUrl}
+                  key={embedUrl}
+                  src={embedUrl}
                   className="w-full h-[680px] sm:h-[750px] border-0"
                   title="Official Google Booking Form"
                 >
@@ -177,9 +190,9 @@ export default function EnquirySection() {
                 <p className="text-xs text-gray-400 max-w-md mx-auto">
                   Click below to open our official Google Form directly:
                 </p>
-                {siteConfig.googleForm?.directFormUrl && (
+                {directUrl && (
                   <a
-                    href={siteConfig.googleForm.directFormUrl}
+                    href={directUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 bg-amber-500 text-black px-6 py-3 rounded-xl font-bold text-xs hover:bg-amber-400 transition-all shadow-lg"
