@@ -10,11 +10,5 @@ export const testimonialsContent = [
     name: "Suresh & Ananya Pai",
     role: "Event Hosts",
     location: "Mangaluru"
-  },
-  {
-    quote: "test",
-    name: "test",
-    role: "test",
-    location: "test"
   }
 ];
