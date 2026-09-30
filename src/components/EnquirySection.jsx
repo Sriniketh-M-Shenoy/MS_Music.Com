@@ -4,7 +4,9 @@ import { Mail, Send, CheckCircle2, Phone, User, MessageSquare, ExternalLink, Fil
 import { useSiteConfig } from '../config/siteConfig';
 
 function formatGoogleFormEmbedUrl(url) {
-  if (!url) return '';
+  if (!url || url.includes('dummyFormIdHere')) {
+    return 'https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?embedded=true';
+  }
   const trimmed = url.trim();
   if (trimmed.includes('embedded=true')) return trimmed;
   if (trimmed.includes('/viewform')) {
