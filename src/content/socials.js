@@ -8,5 +8,6 @@ export const socialsContent = {
   youtubeHandle: "@muralidharshenoykochi",
   googleFormEnabled: true,
   googleFormEmbedUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfDdummyFormIdHere/viewform?embedded=true",
-  googleFormDirectUrl: "https://forms.google.com/your-google-form-link-here"
+  googleFormDirectUrl: "https://forms.google.com/your-google-form-link-here",
+  emailFormEnabled: true
 };

@@ -5,13 +5,13 @@ import picMicBlack from '../assets/gallery/pic_mic_black.png';
 export const audioTracksContent = [
   {
     id: 1,
-    title: "Neelavaana Odayil (Appa Mix)",
+    title: "Jabdeep Jale Aana",
     genre: "Malayalam Classic",
     language: "Malayalam",
     duration: "04:15",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "/uploads/Neelavaana_Odayil_Appa_mix_v1.m4a",
-    coverImage: picSingingMic
+    coverImage: "http://localhost:3001/assets/pic_singing_mic-DaQs1ya9.png"
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ export const audioTracksContent = [
     duration: "03:45",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "",
-    coverImage: picRedKurta
+    coverImage: "http://localhost:3001/assets/pic_red_kurta-BKZBaEDj.png"
   },
   {
     id: 3,
@@ -31,6 +31,16 @@ export const audioTracksContent = [
     duration: "05:10",
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "",
-    coverImage: picMicBlack
+    coverImage: "http://localhost:3001/assets/pic_mic_black-DOqHKaUO.png"
+  },
+  {
+    id: 1790803376426,
+    title: "Neelavaana Odayil",
+    genre: "Film",
+    language: "Tamil",
+    duration: "03:30",
+    spotifyUrl: "",
+    audioUrl: "/uploads/Neelavaana_Odayil_Appa_mix_v1_1790803407806.aif",
+    coverImage: picSingingMic
   }
 ];
