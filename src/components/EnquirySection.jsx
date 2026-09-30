@@ -298,7 +298,7 @@ export default function EnquirySection() {
                   </div>
 
                   {/* Proposed Concert Time */}
-                  <div className="sm:col-span-2">
+                  <div>
                     <label className="block text-xs uppercase font-mono tracking-wider text-gray-300 mb-2 font-semibold flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
                       <span>Proposed Concert Time</span>
