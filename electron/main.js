@@ -127,6 +127,13 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const iconPath = path.join(ROOT_DIR, 'build', 'icon.png');
+  if (process.platform === 'darwin' && app.dock && fs.existsSync(iconPath)) {
+    try {
+      app.dock.setIcon(nativeImage.createFromPath(iconPath));
+    } catch (e) {}
+  }
+
   createWindow();
 
   app.on('activate', () => {

@@ -18,7 +18,7 @@
   "build": {
     "appId": "com.msmusic.studio",
     "productName": "MS Music Studio",
-    "icon": "build/icon.png",
+    "icon": "build/icon.icns",
     "directories": {
       "output": "release"
     },
@@ -34,7 +34,7 @@
     ],
     "mac": {
       "category": "public.app-category.music",
-      "icon": "build/icon.png",
+      "icon": "build/icon.icns",
       "target": [
         "dir"
       ]
