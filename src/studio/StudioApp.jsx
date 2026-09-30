@@ -68,13 +68,38 @@ export default function StudioApp({ onCloseStudio }) {
   const [commitMessage, setCommitMessage] = useState('');
   const [publishProgress, setPublishProgress] = useState(null);
   const [revertProgress, setRevertProgress] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(''); // 'syncing' | 'synced' | ''
 
-  // Fetch status & version history on mount
+  // Fetch status, version history & auto-pull latest from git remote on mount
   useEffect(() => {
+    handleSyncGitPull();
     fetchGitStatus();
     fetchGitHistory();
     checkConflictStatus();
   }, []);
+
+  const handleSyncGitPull = async () => {
+    try {
+      setSyncStatus('syncing');
+      const res = await fetch(`${API_BASE}/api/git-pull`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setSyncStatus('synced');
+          fetchGitStatus();
+          fetchGitHistory();
+          setTimeout(() => setSyncStatus(''), 4000);
+        } else {
+          setSyncStatus('');
+        }
+      } else {
+        setSyncStatus('');
+      }
+    } catch (err) {
+      console.warn('Auto-pull fetch failed:', err.message);
+      setSyncStatus('');
+    }
+  };
 
   const fetchGitStatus = async () => {
     try {
@@ -391,7 +416,19 @@ export default function StudioApp({ onCloseStudio }) {
 
         {/* RIGHT ACTION BUTTONS */}
         <div className="flex items-center gap-2">
-          {/* Status badges */}
+          {syncStatus === 'syncing' && (
+            <span className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium animate-pulse">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              Syncing Git Remote...
+            </span>
+          )}
+
+          {syncStatus === 'synced' && (
+            <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              Synced Remote
+            </span>
+          )}
 
           {isDirty && (
             <span className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium animate-pulse">
@@ -406,6 +443,17 @@ export default function StudioApp({ onCloseStudio }) {
               Saved Local Draft
             </span>
           )}
+
+          {/* Sync Remote Button */}
+          <button
+            onClick={handleSyncGitPull}
+            disabled={syncStatus === 'syncing'}
+            title="Pull latest website changes from GitHub"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Sync Latest</span>
+          </button>
 
           {/* Quick Save Button */}
           <button

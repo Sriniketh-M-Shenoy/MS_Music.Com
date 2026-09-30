@@ -6,7 +6,7 @@ export const socialsContent = {
   facebook: "https://www.facebook.com/muralidhar.g.shenoy/",
   email: "booking.muralidharshenoy@gmail.com",
   youtubeHandle: "@muralidharshenoykochi",
-  googleFormEnabled: false,
+  googleFormEnabled: true,
   googleFormEmbedUrl: "https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?pli=1",
-  googleFormDirectUrl: "https://forms.google.com/your-google-form-link-here"
+  googleFormDirectUrl: "https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?pli=1"
 };

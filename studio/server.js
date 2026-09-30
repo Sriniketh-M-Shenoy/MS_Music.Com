@@ -683,5 +683,6 @@ server.on('error', (err) => {
 
 server.listen(PORT, () => {
   console.log(`[MS Studio API] Server running on http://localhost:${PORT}`);
+  autoPullLatest();
 });
 
