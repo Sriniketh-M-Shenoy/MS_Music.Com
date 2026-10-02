@@ -9,25 +9,21 @@ try {
   console.error('Studio server start error:', err);
 }
 
-const ABSOLUTE_PROJECT_DIR = '/Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website';
-
 let ROOT_DIR = path.resolve(__dirname, '..');
 if (ROOT_DIR.includes('app.asar')) {
   const asarIndex = ROOT_DIR.indexOf('.app/Contents/Resources/app.asar');
   if (asarIndex !== -1) {
+    const asarPath = ROOT_DIR.substring(0, asarIndex + '.app/Contents/Resources/app.asar'.length);
     const parentDir = path.resolve(ROOT_DIR.substring(0, asarIndex + 4), '..');
+
     if (fs.existsSync(path.join(parentDir, 'package.json'))) {
       ROOT_DIR = parentDir;
-    } else if (fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
-      ROOT_DIR = ABSOLUTE_PROJECT_DIR;
+    } else if (fs.existsSync(path.join(process.cwd(), 'package.json'))) {
+      ROOT_DIR = process.cwd();
     } else {
-      ROOT_DIR = parentDir;
+      ROOT_DIR = asarPath;
     }
   }
-}
-
-if (!fs.existsSync(path.join(ROOT_DIR, 'package.json')) && fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
-  ROOT_DIR = ABSOLUTE_PROJECT_DIR;
 }
 let mainWindow = null;
 const SERVER_PORT = 3001;

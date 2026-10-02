@@ -3,37 +3,41 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const ABSOLUTE_PROJECT_DIR = '/Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website';
-
 let ROOT_DIR = path.resolve(__dirname, '..');
+let ASAR_PATH = null;
 
 // Handle execution from inside packaged Electron app.asar or moved app bundle
 if (ROOT_DIR.includes('app.asar')) {
   const asarIndex = ROOT_DIR.indexOf('.app/Contents/Resources/app.asar');
   if (asarIndex !== -1) {
+    ASAR_PATH = ROOT_DIR.substring(0, asarIndex + '.app/Contents/Resources/app.asar'.length);
     const parentDir = path.resolve(ROOT_DIR.substring(0, asarIndex + 4), '..');
-    if (fs.existsSync(path.join(parentDir, 'src', 'content'))) {
+
+    if (fs.existsSync(path.join(parentDir, 'src', 'content')) && fs.existsSync(path.join(parentDir, 'package.json'))) {
       ROOT_DIR = parentDir;
-    } else if (fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
-      ROOT_DIR = ABSOLUTE_PROJECT_DIR;
+    } else if (fs.existsSync(path.join(process.cwd(), 'src', 'content')) && fs.existsSync(path.join(process.cwd(), 'package.json'))) {
+      ROOT_DIR = process.cwd();
     } else {
-      ROOT_DIR = parentDir;
+      ROOT_DIR = ASAR_PATH;
     }
   } else {
     ROOT_DIR = process.cwd();
   }
 }
 
-if (!fs.existsSync(path.join(ROOT_DIR, 'src', 'content')) && fs.existsSync(ABSOLUTE_PROJECT_DIR)) {
-  ROOT_DIR = ABSOLUTE_PROJECT_DIR;
-}
-
 const PORT = process.env.PORT || 3001;
 
 // Ensure upload directories exist
-const UPLOADS_DIR = path.join(ROOT_DIR, 'public', 'uploads');
+let UPLOADS_DIR = path.join(ROOT_DIR, 'public', 'uploads');
+if (ROOT_DIR.includes('app.asar')) {
+  const userDataDir = process.env.APPDATA || (process.platform === 'darwin' ? path.join(process.env.HOME, 'Library', 'Application Support', 'MS Music Studio') : path.join(process.env.HOME, '.config', 'MS Music Studio'));
+  UPLOADS_DIR = path.join(userDataDir, 'uploads');
+}
+
 if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  } catch (e) {}
 }
 
 // Content directory
@@ -666,7 +670,11 @@ const server = http.createServer(async (req, res) => {
 
     // Static uploaded files serving
     if (pathname.startsWith('/uploads/')) {
-      let filePath = path.join(ROOT_DIR, 'public', pathname);
+      const filename = pathname.replace(/^\/uploads\//, '');
+      let filePath = path.join(UPLOADS_DIR, filename);
+      if (!fs.existsSync(filePath)) {
+        filePath = path.join(ROOT_DIR, 'public', pathname);
+      }
       if (!fs.existsSync(filePath)) {
         filePath = path.join(ROOT_DIR, 'dist', pathname);
       }
@@ -681,6 +689,8 @@ const server = http.createServer(async (req, res) => {
           '.mp3': 'audio/mpeg',
           '.wav': 'audio/wav',
           '.m4a': 'audio/m4a',
+          '.aif': 'audio/x-aiff',
+          '.aiff': 'audio/x-aiff',
           '.ogg': 'audio/ogg'
         };
         const contentType = contentTypes[ext] || 'application/octet-stream';
