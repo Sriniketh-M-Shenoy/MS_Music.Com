@@ -46,3 +46,43 @@ export async function getCounterValue(counterName) {
     return 0;
   }
 }
+
+export function getVideoCounterId(video) {
+  if (!video) return 'media_view_unknown';
+  const prefix = video.type === 'Short' ? 'short_views_' : 'video_views_';
+  const rawId = video.videoId || video.id || video.title;
+  return prefix + sanitizeCounterId(rawId);
+}
+
+export function recordMediaClick(video) {
+  if (!video) return;
+  const counterId = getVideoCounterId(video);
+  const totalCounter = video.type === 'Short' ? 'total_short_views' : 'total_video_views';
+
+  // Increment remote API Ninjas counters asynchronously
+  incrementCounter(counterId);
+  incrementCounter(totalCounter);
+  incrementCounter('total_media_views');
+
+  // Track in local storage for instantaneous UI feedback & cross-tab sync
+  try {
+    const rawKey = video.videoId || video.id || video.title;
+    const clicks = JSON.parse(localStorage.getItem('ms_media_clicks') || '{}');
+    clicks[rawKey] = (clicks[rawKey] || 0) + 1;
+    localStorage.setItem('ms_media_clicks', JSON.stringify(clicks));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ms_media_clicks_updated', {
+        detail: { key: rawKey, count: clicks[rawKey], video }
+      }));
+    }
+  } catch (e) {}
+}
+
+export function getLocalMediaClicks() {
+  try {
+    if (typeof window === 'undefined') return {};
+    return JSON.parse(localStorage.getItem('ms_media_clicks') || '{}');
+  } catch (e) {
+    return {};
+  }
+}

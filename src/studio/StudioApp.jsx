@@ -5,9 +5,14 @@ import {
   Image as ImageIcon, FileText, MessageSquare, HelpCircle, Share2, Sliders,
   X, Play, Pause, ExternalLink, Check, ChevronRight, History, RotateCcw,
   GitBranch, GitCommit, GitMerge, AlertTriangle, ShieldAlert,
-  BarChart3, Key, Lock, Ticket, TrendingUp, Activity, ShieldCheck, Info
+  BarChart3, Key, Lock, Ticket, TrendingUp, Activity, ShieldCheck, Info,
+  Youtube, Search
 } from 'lucide-react';
-import { getCounterValue, sanitizeCounterId, API_KEY } from '../utils/metrics';
+import { 
+  getCounterValue, sanitizeCounterId, API_KEY,
+  getVideoCounterId, recordMediaClick, getLocalMediaClicks, incrementCounter
+} from '../utils/metrics';
+import VideoPlayerModal from '../components/VideoPlayerModal';
 
 import { 
   heroContent as initialHero,
@@ -117,13 +122,20 @@ export default function StudioApp({ onCloseStudio }) {
   const [metricsData, setMetricsData] = useState({
     siteVisits: 0,
     songPlays: 0,
+    videoViews: 0,
+    shortViews: 0,
+    totalMediaViews: 0,
     enquiryClicks: 0,
     enquirySubmits: 0,
     ticketClicks: 0,
     songsBreakdown: {},
     concertsBreakdown: {},
+    videosBreakdown: {},
     socialClicks: { facebook: 0, youtube: 0, instagram: 0, spotify: 0 }
   });
+  const [mediaFilter, setMediaFilter] = useState('all'); // 'all' | 'video' | 'short' | 'most_viewed'
+  const [mediaSearchQuery, setMediaSearchQuery] = useState('');
+  const [activeMediaModal, setActiveMediaModal] = useState(null);
 
   // YouTube Videos & Media State
   const [isSyncingYouTube, setIsSyncingYouTube] = useState(false);
@@ -201,6 +213,9 @@ export default function StudioApp({ onCloseStudio }) {
       const [
         siteVisits,
         songPlays,
+        videoViews,
+        shortViews,
+        totalMediaViews,
         enquiryClicks,
         enquirySubmits,
         ticketClicks,
@@ -212,6 +227,9 @@ export default function StudioApp({ onCloseStudio }) {
       ] = await Promise.all([
         getCounterValue('site_visits'),
         getCounterValue('total_song_plays'),
+        getCounterValue('total_video_views'),
+        getCounterValue('total_short_views'),
+        getCounterValue('total_media_views'),
         getCounterValue('enquiry_form_clicks'),
         getCounterValue('enquiry_form_submits'),
         getCounterValue('total_book_ticket_clicks'),
@@ -236,15 +254,43 @@ export default function StudioApp({ onCloseStudio }) {
         concertsBreakdown[evt.title] = await getCounterValue(cId);
       }));
 
+      // Build video & shorts views breakdown
+      const localClicks = getLocalMediaClicks();
+      const videosBreakdown = {};
+      (videos || []).forEach(v => {
+        const key = v.videoId || v.id || v.title;
+        videosBreakdown[key] = localClicks[key] || 0;
+      });
+
+      // Concurrently query remote API Ninjas counters for active or recently viewed items
+      const activeVideos = (videos || []).filter(v => {
+        const key = v.videoId || v.id || v.title;
+        return (localClicks[key] || 0) > 0;
+      }).slice(0, 15);
+
+      if (activeVideos.length > 0) {
+        await Promise.all(activeVideos.map(async (v) => {
+          const key = v.videoId || v.id || v.title;
+          const remoteCount = await getCounterValue(getVideoCounterId(v));
+          if (remoteCount > 0) {
+            videosBreakdown[key] = Math.max(remoteCount, videosBreakdown[key] || 0);
+          }
+        }));
+      }
+
       setMetricsData({
         siteVisits: siteVisits || 0,
         songPlays: songPlays || 0,
+        videoViews: videoViews || 0,
+        shortViews: shortViews || 0,
+        totalMediaViews: totalMediaViews || (videoViews || 0) + (shortViews || 0),
         enquiryClicks: enquiryClicks || 0,
         enquirySubmits: enquirySubmits || 0,
         ticketClicks: ticketClicks || 0,
         interestedClicks: interestedClicks || 0,
         songsBreakdown,
         concertsBreakdown,
+        videosBreakdown,
         socialClicks: {
           facebook: fbClicks || 0,
           youtube: ytClicks || 0,
@@ -258,6 +304,48 @@ export default function StudioApp({ onCloseStudio }) {
       setMetricsLoading(false);
     }
   };
+
+  const handleIncrementVideoView = (video) => {
+    recordMediaClick(video);
+    const key = video.videoId || video.id || video.title;
+    setMetricsData(prev => ({
+      ...prev,
+      videoViews: video.type === 'Short' ? prev.videoViews : (prev.videoViews || 0) + 1,
+      shortViews: video.type === 'Short' ? (prev.shortViews || 0) + 1 : prev.shortViews,
+      totalMediaViews: (prev.totalMediaViews || 0) + 1,
+      videosBreakdown: {
+        ...prev.videosBreakdown,
+        [key]: (prev.videosBreakdown[key] || 0) + 1
+      }
+    }));
+  };
+
+  useEffect(() => {
+    const handleMediaClickUpdate = (e) => {
+      if (e?.detail?.key) {
+        const key = e.detail.key;
+        const isShort = e.detail.video?.type === 'Short';
+        setMetricsData(prev => ({
+          ...prev,
+          videoViews: isShort ? prev.videoViews : (prev.videoViews || 0) + 1,
+          shortViews: isShort ? (prev.shortViews || 0) + 1 : prev.shortViews,
+          totalMediaViews: (prev.totalMediaViews || 0) + 1,
+          videosBreakdown: {
+            ...prev.videosBreakdown,
+            [key]: (prev.videosBreakdown[key] || 0) + 1
+          }
+        }));
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ms_media_clicks_updated', handleMediaClickUpdate);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ms_media_clicks_updated', handleMediaClickUpdate);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'metrics') {
@@ -2274,7 +2362,7 @@ export default function StudioApp({ onCloseStudio }) {
                   </div>
 
                   {/* TOP KPI CARDS */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                     <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
                       <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
                         <span>Site Visits</span>
@@ -2299,27 +2387,38 @@ export default function StudioApp({ onCloseStudio }) {
 
                     <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
                       <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
-                        <span>Ticket Clicks</span>
-                        <Ticket className="w-4 h-4 text-rose-400" />
+                        <span>Video Views</span>
+                        <Youtube className="w-4 h-4 text-red-500" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-red-500 font-mono">
+                        {metricsLoading ? '...' : (metricsData.videoViews || 0).toLocaleString()}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 block">YouTube videos</span>
+                    </div>
+
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
+                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
+                        <span>Shorts Views</span>
+                        <Sparkles className="w-4 h-4 text-rose-400" />
                       </div>
                       <div className="text-2xl sm:text-3xl font-extrabold text-rose-400 font-mono">
+                        {metricsLoading ? '...' : (metricsData.shortViews || 0).toLocaleString()}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 block">YouTube shorts</span>
+                    </div>
+
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
+                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
+                        <span>Ticket Clicks</span>
+                        <Ticket className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">
                         {metricsLoading ? '...' : (metricsData.ticketClicks || 0).toLocaleString()}
                       </div>
                       <span className="text-[10px] text-zinc-500 block">Book ticket clicks</span>
                     </div>
 
-                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
-                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
-                        <span>Enquiry Views</span>
-                        <FileText className="w-4 h-4 text-blue-400" />
-                      </div>
-                      <div className="text-2xl sm:text-3xl font-extrabold text-blue-400 font-mono">
-                        {metricsLoading ? '...' : (metricsData.enquiryClicks || 0).toLocaleString()}
-                      </div>
-                      <span className="text-[10px] text-zinc-500 block">Form visits / tabs</span>
-                    </div>
-
-                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1 col-span-2 md:col-span-1">
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1 col-span-2 sm:col-span-1">
                       <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
                         <span>Enquiries Sent</span>
                         <CheckCircle2 className="w-4 h-4 text-purple-400" />
@@ -2327,7 +2426,7 @@ export default function StudioApp({ onCloseStudio }) {
                       <div className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">
                         {metricsLoading ? '...' : (metricsData.enquirySubmits || 0).toLocaleString()}
                       </div>
-                      <span className="text-[10px] text-zinc-500 block">Completed submissions</span>
+                      <span className="text-[10px] text-zinc-500 block">Submissions</span>
                     </div>
                   </div>
 
@@ -2337,7 +2436,7 @@ export default function StudioApp({ onCloseStudio }) {
                       <Activity className="w-4 h-4 text-amber-400" />
                       Audience Engagement & Growth Funnel
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 pt-2">
                       <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
                         <span className="text-[11px] text-zinc-400 block font-semibold">1. Site Visitors</span>
                         <span className="text-lg font-bold text-white font-mono">{metricsData.siteVisits || 0}</span>
@@ -2347,7 +2446,18 @@ export default function StudioApp({ onCloseStudio }) {
                       </div>
 
                       <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
-                        <span className="text-[11px] text-zinc-400 block font-semibold">2. Listened to Music</span>
+                        <span className="text-[11px] text-zinc-400 block font-semibold">2. Videos & Shorts</span>
+                        <span className="text-lg font-bold text-red-400 font-mono">{(metricsData.videoViews || 0) + (metricsData.shortViews || 0)}</span>
+                        <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                          <div 
+                            className="bg-red-500 h-full"
+                            style={{ width: `${Math.min(100, Math.max(5, metricsData.siteVisits ? Math.round((((metricsData.videoViews || 0) + (metricsData.shortViews || 0)) / metricsData.siteVisits) * 100) : 0))}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
+                        <span className="text-[11px] text-zinc-400 block font-semibold">3. Listened to Music</span>
                         <span className="text-lg font-bold text-emerald-400 font-mono">{metricsData.songPlays || 0}</span>
                         <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
                           <div 
@@ -2358,7 +2468,7 @@ export default function StudioApp({ onCloseStudio }) {
                       </div>
 
                       <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
-                        <span className="text-[11px] text-zinc-400 block font-semibold">3. Enquiry / Tickets</span>
+                        <span className="text-[11px] text-zinc-400 block font-semibold">4. Enquiry / Tickets</span>
                         <span className="text-lg font-bold text-blue-400 font-mono">{(metricsData.enquiryClicks || 0) + (metricsData.ticketClicks || 0)}</span>
                         <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
                           <div 
@@ -2369,7 +2479,7 @@ export default function StudioApp({ onCloseStudio }) {
                       </div>
 
                       <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
-                        <span className="text-[11px] text-zinc-400 block font-semibold">4. Form Submissions</span>
+                        <span className="text-[11px] text-zinc-400 block font-semibold">5. Form Submissions</span>
                         <span className="text-lg font-bold text-purple-400 font-mono">{metricsData.enquirySubmits || 0}</span>
                         <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
                           <div 
@@ -2426,6 +2536,234 @@ export default function StudioApp({ onCloseStudio }) {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* YOUTUBE VIDEOS & SHORTS VIEWS BREAKDOWN */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                          <div className="w-5 h-5 rounded bg-red-600/20 text-red-500 flex items-center justify-center">
+                            <Youtube className="w-3.5 h-3.5" />
+                          </div>
+                          YouTube Videos & Shorts Views Breakdown
+                        </h3>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          Realtime view clicks tracked for each video and short from @muralidharshenoykochi.
+                        </p>
+                      </div>
+
+                      {/* Header Counter Summary Badges */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-red-950/60 text-red-300 border border-red-800/40 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
+                          Videos: {metricsData.videoViews || 0}
+                        </span>
+                        <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-rose-950/60 text-rose-300 border border-rose-800/40 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+                          Shorts: {metricsData.shortViews || 0}
+                        </span>
+                        <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 font-bold">
+                          Total: {(metricsData.videoViews || 0) + (metricsData.shortViews || 0)} views
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Filter Pills & Search Bar */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+                      <div className="flex flex-wrap items-center gap-1.5 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                        {[
+                          { id: 'all', label: 'All Media', count: videos.length },
+                          { id: 'video', label: 'Videos', count: videos.filter(v => v.type === 'Video').length },
+                          { id: 'short', label: 'Shorts', count: videos.filter(v => v.type === 'Short').length },
+                          { id: 'most_viewed', label: 'Most Viewed', count: videos.filter(v => (metricsData.videosBreakdown[v.videoId || v.id || v.title] || 0) > 0).length }
+                        ].map(tab => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setMediaFilter(tab.id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                              mediaFilter === tab.id
+                                ? 'bg-amber-400 text-black font-bold shadow'
+                                : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                            }`}
+                          >
+                            <span>{tab.label}</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              mediaFilter === tab.id ? 'bg-black/20 text-black' : 'bg-zinc-800 text-zinc-400'
+                            }`}>
+                              {tab.count}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="relative min-w-[200px] sm:w-64">
+                        <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={mediaSearchQuery}
+                          onChange={e => setMediaSearchQuery(e.target.value)}
+                          placeholder="Search videos & shorts..."
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-amber-500 font-mono"
+                        />
+                        {mediaSearchQuery && (
+                          <button
+                            onClick={() => setMediaSearchQuery('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Media Items List */}
+                    <div className="space-y-3 pt-2">
+                      {(() => {
+                        let filtered = videos.filter(v => {
+                          if (mediaFilter === 'video') return v.type === 'Video';
+                          if (mediaFilter === 'short') return v.type === 'Short';
+                          if (mediaFilter === 'most_viewed') {
+                            const key = v.videoId || v.id || v.title;
+                            return (metricsData.videosBreakdown[key] || 0) > 0;
+                          }
+                          return true;
+                        });
+
+                        if (mediaSearchQuery.trim()) {
+                          const q = mediaSearchQuery.toLowerCase();
+                          filtered = filtered.filter(v => 
+                            (v.title || '').toLowerCase().includes(q) ||
+                            (v.videoId || '').toLowerCase().includes(q)
+                          );
+                        }
+
+                        if (mediaFilter === 'most_viewed') {
+                          filtered = [...filtered].sort((a, b) => {
+                            const aKey = a.videoId || a.id || a.title;
+                            const bKey = b.videoId || b.id || b.title;
+                            return (metricsData.videosBreakdown[bKey] || 0) - (metricsData.videosBreakdown[aKey] || 0);
+                          });
+                        }
+
+                        const maxViews = Math.max(...Object.values(metricsData.videosBreakdown || {}), 1);
+
+                        if (filtered.length === 0) {
+                          return (
+                            <div className="p-8 text-center text-zinc-500 text-xs font-mono bg-zinc-950 rounded-xl border border-zinc-800">
+                              No videos or shorts match your filter criteria.
+                            </div>
+                          );
+                        }
+
+                        return filtered.slice(0, 30).map((vid, i) => {
+                          const key = vid.videoId || vid.id || vid.title;
+                          const count = metricsData.videosBreakdown[key] || 0;
+                          const isShort = vid.type === 'Short';
+                          const counterId = getVideoCounterId(vid);
+                          const pct = Math.round((count / maxViews) * 100);
+
+                          return (
+                            <div key={vid.id || vid.videoId || i} className="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800/60 hover:border-zinc-700/80 transition-all space-y-2.5">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-start gap-3 min-w-0">
+                                  {/* Thumbnail */}
+                                  <div className="relative w-16 h-12 rounded-lg overflow-hidden bg-black shrink-0 border border-zinc-800">
+                                    <img
+                                      src={vid.thumbnail}
+                                      alt={vid.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <span className={`absolute bottom-0.5 right-0.5 text-[8px] font-mono px-1 rounded font-bold ${
+                                      isShort ? 'bg-rose-600 text-white' : 'bg-red-600 text-white'
+                                    }`}>
+                                      {isShort ? 'Short' : 'Video'}
+                                    </span>
+                                  </div>
+
+                                  {/* Title & Metadata */}
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-bold text-white line-clamp-1">
+                                        {vid.title}
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-zinc-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                      <span className="font-mono">{vid.views || 'YouTube'}</span>
+                                      <span>•</span>
+                                      <span>{vid.timeAgo || vid.date}</span>
+                                    </p>
+                                    <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">
+                                      Counter ID: {counterId}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Right Side: View Count Badge & Test Actions */}
+                                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                  <div className="text-right mr-1">
+                                    <span className={`text-base font-extrabold font-mono block ${
+                                      count > 0 
+                                        ? (isShort ? 'text-rose-400' : 'text-amber-400')
+                                        : 'text-zinc-500'
+                                    }`}>
+                                      {count} {count === 1 ? 'view' : 'views'}
+                                    </span>
+                                    <span className="text-[9px] text-zinc-500 font-mono">
+                                      {count > 0 ? 'Recorded on-site' : 'No clicks yet'}
+                                    </span>
+                                  </div>
+
+                                  {/* Quick +1 Click Test Button */}
+                                  <button
+                                    onClick={() => handleIncrementVideoView(vid)}
+                                    title="Simulate +1 Click View"
+                                    className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-mono text-[11px] font-bold border border-zinc-700 hover:border-amber-400/50 transition-all flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <span>+1 Click</span>
+                                  </button>
+
+                                  {/* Watch in Popup Button */}
+                                  <button
+                                    onClick={() => {
+                                      handleIncrementVideoView(vid);
+                                      setActiveMediaModal(vid);
+                                    }}
+                                    title="Watch in Popup Player"
+                                    className="p-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-white border border-red-500/30 transition-all cursor-pointer"
+                                  >
+                                    <Play className="w-3.5 h-3.5 fill-current" />
+                                  </button>
+
+                                  {/* External Link */}
+                                  {vid.url && (
+                                    <a
+                                      href={vid.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      title="Open on YouTube"
+                                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all"
+                                    >
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Realtime progress bar */}
+                              <div className="w-full bg-zinc-900 h-1 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    isShort ? 'bg-gradient-to-r from-rose-500 to-pink-500' : 'bg-gradient-to-r from-red-600 to-amber-400'
+                                  }`}
+                                  style={{ width: `${Math.max(count > 0 ? 6 : 0, pct)}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
 
@@ -2989,6 +3327,13 @@ export default function StudioApp({ onCloseStudio }) {
           </div>
         </div>
       )}
+
+      {/* Video Popup Player for Testing in Studio */}
+      <VideoPlayerModal
+        video={activeMediaModal}
+        isOpen={!!activeMediaModal}
+        onClose={() => setActiveMediaModal(null)}
+      />
 
     </div>
   );

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Youtube, Instagram, Facebook, Play, Eye, Calendar, Sparkles, ChevronDown } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
+import { recordMediaClick, getLocalMediaClicks, incrementCounter } from '../utils/metrics';
 import VideoPlayerModal from './VideoPlayerModal';
 
 export default function LatestPostsSection() {
@@ -11,6 +12,24 @@ export default function LatestPostsSection() {
   const [visibleCount, setVisibleCount] = useState(6);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [clickCounts, setClickCounts] = useState(() => getLocalMediaClicks());
+
+  // Keep on-site media click counts in sync in real time across the page
+  useEffect(() => {
+    const handleUpdate = () => {
+      setClickCounts(getLocalMediaClicks());
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ms_media_clicks_updated', handleUpdate);
+      window.addEventListener('storage', handleUpdate);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ms_media_clicks_updated', handleUpdate);
+        window.removeEventListener('storage', handleUpdate);
+      }
+    };
+  }, []);
 
   // Combine YouTube videos & shorts with any standalone social posts
   const rawVideos = siteConfig.videos || [];
@@ -45,9 +64,12 @@ export default function LatestPostsSection() {
 
   const handleCardClick = (item) => {
     if (item.isYouTube) {
+      // Fire individual video counter, total_video_views / total_short_views, and total_media_views
+      recordMediaClick(item);
       setSelectedVideo(item);
       setIsModalOpen(true);
     } else if (item.url) {
+      incrementCounter(`social_clicks_${item.platform?.toLowerCase() || 'post'}`);
       window.open(item.url, '_blank', 'noopener,noreferrer');
     }
   };
@@ -189,12 +211,21 @@ export default function LatestPostsSection() {
 
                     {/* Bottom Metadata Bar over Thumbnail */}
                     <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px] font-mono text-zinc-300">
-                      {item.views && (
-                        <span className="flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md">
-                          <Eye className="w-3 h-3 text-amber-400" />
-                          {item.views}
-                        </span>
-                      )}
+                      {(() => {
+                        const itemKey = item.videoId || item.id || item.title;
+                        const onSiteViews = clickCounts[itemKey] || 0;
+                        return (
+                          <span className="flex items-center gap-1.5 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-md text-zinc-200">
+                            <Eye className="w-3 h-3 text-amber-400" />
+                            <span>{item.views || `${onSiteViews} views`}</span>
+                            {onSiteViews > 0 && item.views && (
+                              <span className="text-amber-300 font-bold bg-amber-400/20 px-1 rounded text-[10px]" title="On-site view clicks">
+                                +{onSiteViews}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })()}
                       {(item.timeAgo || item.date) && (
                         <span className="flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-zinc-400">
                           <Calendar className="w-3 h-3" />

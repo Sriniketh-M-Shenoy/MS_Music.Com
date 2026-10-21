@@ -1,9 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Youtube, Eye, Calendar, BellRing } from 'lucide-react';
-import { incrementCounter } from '../utils/metrics';
+import { incrementCounter, getLocalMediaClicks } from '../utils/metrics';
 
 export default function VideoPlayerModal({ video, isOpen, onClose }) {
+  const [clickCounts, setClickCounts] = useState(() => getLocalMediaClicks());
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setClickCounts(getLocalMediaClicks());
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ms_media_clicks_updated', handleUpdate);
+      window.addEventListener('storage', handleUpdate);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ms_media_clicks_updated', handleUpdate);
+        window.removeEventListener('storage', handleUpdate);
+      }
+    };
+  }, []);
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -119,12 +136,21 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
 
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400 pt-1 border-t border-white/5">
               <div className="flex items-center gap-4">
-                {video.views && (
-                  <span className="flex items-center gap-1.5 text-zinc-300 font-mono text-xs">
-                    <Eye className="w-3.5 h-3.5 text-amber-400" />
-                    {video.views}
-                  </span>
-                )}
+                {(() => {
+                  const videoKey = video.videoId || video.id || video.title;
+                  const onSiteViews = clickCounts[videoKey] || 0;
+                  return (
+                    <span className="flex items-center gap-1.5 text-zinc-300 font-mono text-xs">
+                      <Eye className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{video.views || `${onSiteViews} views`}</span>
+                      {onSiteViews > 0 && video.views && (
+                        <span className="text-amber-300 font-bold bg-amber-400/20 px-1.5 py-0.5 rounded text-[10px]">
+                          +{onSiteViews} on site
+                        </span>
+                      )}
+                    </span>
+                  );
+                })()}
                 {(video.timeAgo || video.date) && (
                   <span className="flex items-center gap-1.5 text-zinc-400 font-mono text-xs">
                     <Calendar className="w-3.5 h-3.5 text-zinc-500" />
