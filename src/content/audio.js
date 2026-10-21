@@ -32,5 +32,15 @@ export const audioTracksContent = [
     spotifyUrl: "https://open.spotify.com/artist/0oEpNPAtIRZ1ReC28uqhdT",
     audioUrl: "",
     coverImage: "http://localhost:3001/assets/pic_mic_black-DOqHKaUO.png"
+  },
+  {
+    id: 1792610958603,
+    title: "Kudajadriyil Kolikollum",
+    genre: "Devotional / Classical",
+    language: "Malayam",
+    duration: "03:30",
+    spotifyUrl: "",
+    audioUrl: "/uploads/Kudajadri_Murali_1792611022233.wav",
+    coverImage: picSingingMic
   }
 ];

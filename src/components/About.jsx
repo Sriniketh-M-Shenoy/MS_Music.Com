@@ -103,15 +103,6 @@ export default function About({ onOpenBooking }) {
                     {siteConfig.artist.location || "Canara Robeco Mutual Fund, Mangalore"}
                   </p>
                 </div>
-
-                <motion.button
-                  whileHover={{ x: 4 }}
-                  onClick={onOpenBooking}
-                  className="mt-4 text-xs font-semibold text-white hover:text-amber-300 flex items-center gap-1 group"
-                >
-                  <span>Request concert availability</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </motion.button>
               </motion.div>
             </div>
 

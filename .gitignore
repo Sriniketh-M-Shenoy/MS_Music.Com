@@ -6,3 +6,5 @@ dist-ssr
 release
 *.app
 MS Music Studio.app
+studio/git-config.json
+install/

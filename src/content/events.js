@@ -8,7 +8,9 @@ export const eventsContent = [
     venue: "Chowdiah Memorial Hall",
     city: "Bengaluru",
     status: "Available",
-    category: "Public Concert"
+    category: "Public Concert",
+    ticketed: false,
+    ticketUrl: ""
   },
   {
     id: 2,
@@ -19,7 +21,9 @@ export const eventsContent = [
     venue: "Town Hall Auditorium",
     city: "Mangaluru",
     status: "Available",
-    category: "Devotional"
+    category: "Devotional",
+    ticketed: false,
+    ticketUrl: ""
   },
   {
     id: 3,
@@ -30,6 +34,8 @@ export const eventsContent = [
     venue: "Ravindra Kalakshetra",
     city: "Bengaluru",
     status: "Concluded",
-    category: "Film Songs"
+    category: "Film Songs",
+    ticketed: false,
+    ticketUrl: ""
   }
 ];

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { useTheme } from '../utils/theme';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function Navbar({ onOpenBooking }) {
   const siteConfig = useSiteConfig();
+  const { theme, toggleTheme, signatureSrc } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -59,6 +61,8 @@ export default function Navbar({ onOpenBooking }) {
       href: defaultNavHrefs[sec.id] || `#${sec.id}`
     }));
 
+  const activeSignature = signatureSrc || resolveImageSrc(siteConfig.artist.signatureImage);
+
   return (
     <motion.nav
       initial={{ y: -100, opacity: 0 }}
@@ -80,9 +84,9 @@ export default function Navbar({ onOpenBooking }) {
 
             {/* Mobile Signature Logo (only for phone screens) */}
             <img
-              src={resolveImageSrc(siteConfig.artist.signatureImage)}
+              src={activeSignature}
               alt="Muralidhar Shenoy Signature"
-              className="inline-block md:hidden h-7 sm:h-8 w-auto object-contain filter brightness-125 shrink-0"
+              className="inline-block md:hidden h-7 sm:h-8 w-auto object-contain filter brightness-110 shrink-0"
             />
           </a>
 
@@ -101,29 +105,46 @@ export default function Navbar({ onOpenBooking }) {
             ))}
           </div>
 
-          {/* Right Action Button & Signature */}
-          <div className="hidden md:flex items-center gap-4 shrink-0">
+          {/* Right Action Button & Theme Toggle */}
+          <div className="hidden md:flex items-center gap-3 shrink-0">
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              className="p-2 rounded-full border border-white/15 hover:border-amber-400/50 bg-white/5 hover:bg-white/10 text-amber-400 transition-all flex items-center justify-center cursor-pointer shadow-sm"
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-900" />}
+            </button>
+
             <img
-              src={resolveImageSrc(siteConfig.artist.signatureImage)}
+              src={activeSignature}
               alt="Muralidhar Shenoy Signature"
-              className="h-9 lg:h-11 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity shrink-0"
+              className="h-9 lg:h-11 w-auto object-contain opacity-95 hover:opacity-100 transition-opacity shrink-0"
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               onClick={onOpenBooking}
-              className="bg-white hover:bg-gray-200 text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg whitespace-nowrap shrink-0"
+              className="bg-white hover:bg-gray-200 text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg whitespace-nowrap shrink-0 cursor-pointer"
             >
               Booking Enquiry
             </motion.button>
           </div>
 
           {/* Mobile / Tablet Toggle */}
-          <div className="flex lg:hidden items-center gap-2.5 shrink-0">
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-full border border-white/10 bg-white/5 text-amber-400"
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-zinc-900" />}
+            </button>
+
             <button
               onClick={onOpenBooking}
-              className="bg-white text-black px-3.5 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
+              className="bg-white text-black px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-transform whitespace-nowrap"
             >
               Enquiry
             </button>

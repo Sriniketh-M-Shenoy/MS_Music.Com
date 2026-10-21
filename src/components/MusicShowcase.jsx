@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, ExternalLink, Music2, Volume2, VolumeX, X, RotateCcw } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
+import { incrementCounter, sanitizeCounterId } from '../utils/metrics';
 
 function resolveAudioSrc(url) {
   if (!url) return '';
@@ -55,6 +56,9 @@ export default function MusicShowcase() {
 
   const handleTrackClick = (e, track) => {
     e.preventDefault();
+
+    incrementCounter(`song_plays_${sanitizeCounterId(track.title)}`);
+    incrementCounter('total_song_plays');
 
     const audioSrc = resolveAudioSrc(track.audioUrl);
     if (audioSrc) {

@@ -4,8 +4,10 @@ import {
   Plus, Trash2, Edit3, Eye, ArrowUp, ArrowDown, ArrowLeft, ChevronLeft, Music, Calendar, 
   Image as ImageIcon, FileText, MessageSquare, HelpCircle, Share2, Sliders,
   X, Play, Pause, ExternalLink, Check, ChevronRight, History, RotateCcw,
-  GitBranch, GitCommit, GitMerge, AlertTriangle, ShieldAlert
+  GitBranch, GitCommit, GitMerge, AlertTriangle, ShieldAlert,
+  BarChart3, Key, Lock, Ticket, TrendingUp, Activity, ShieldCheck, Info
 } from 'lucide-react';
+import { getCounterValue, sanitizeCounterId, API_KEY } from '../utils/metrics';
 
 import { 
   heroContent as initialHero,
@@ -101,6 +103,150 @@ export default function StudioApp({ onCloseStudio }) {
   const [newCustomDesc, setNewCustomDesc] = useState('');
   const [newCustomContent, setNewCustomContent] = useState('');
 
+  // GitHub PAT Credentials state
+  const [githubPat, setGithubPat] = useState('');
+  const [patSaved, setPatSaved] = useState(false);
+  const [showPat, setShowPat] = useState(false);
+  const [patTestResult, setPatTestResult] = useState(null);
+  const [isTestingPat, setIsTestingPat] = useState(false);
+
+  // Metrics Analytics state
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsData, setMetricsData] = useState({
+    siteVisits: 0,
+    songPlays: 0,
+    enquiryClicks: 0,
+    enquirySubmits: 0,
+    ticketClicks: 0,
+    songsBreakdown: {},
+    concertsBreakdown: {},
+    socialClicks: { facebook: 0, youtube: 0, instagram: 0, spotify: 0 }
+  });
+
+  const fetchGitConfig = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/git-config`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.githubPat) {
+          setGithubPat(data.githubPat);
+          setPatSaved(true);
+        }
+      }
+    } catch (e) {}
+  };
+
+  const handleSaveGitConfig = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/save-git-config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ githubPat: githubPat.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPatSaved(true);
+        alert('GitHub PAT credentials saved successfully in local storage!');
+      } else {
+        alert('Failed to save PAT: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Network error saving PAT: ' + err.message);
+    }
+  };
+
+  const handleTestPat = async () => {
+    if (!githubPat) {
+      alert('Please enter a GitHub PAT first.');
+      return;
+    }
+    setIsTestingPat(true);
+    setPatTestResult(null);
+    try {
+      const res = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${githubPat.trim()}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (res.ok) {
+        const user = await res.json();
+        setPatTestResult({ success: true, login: user.login, name: user.name });
+      } else {
+        setPatTestResult({ success: false, error: `GitHub response: ${res.status} ${res.statusText}` });
+      }
+    } catch (err) {
+      setPatTestResult({ success: false, error: err.message });
+    } finally {
+      setIsTestingPat(false);
+    }
+  };
+
+  const fetchRealtimeMetrics = async () => {
+    setMetricsLoading(true);
+    try {
+      const [
+        siteVisits,
+        songPlays,
+        enquiryClicks,
+        enquirySubmits,
+        ticketClicks,
+        fbClicks,
+        ytClicks,
+        instaClicks,
+        spotifyClicks
+      ] = await Promise.all([
+        getCounterValue('site_visits'),
+        getCounterValue('total_song_plays'),
+        getCounterValue('enquiry_form_clicks'),
+        getCounterValue('enquiry_form_submits'),
+        getCounterValue('total_book_ticket_clicks'),
+        getCounterValue('social_clicks_facebook'),
+        getCounterValue('social_clicks_youtube'),
+        getCounterValue('social_clicks_instagram'),
+        getCounterValue('social_clicks_spotify')
+      ]);
+
+      const songsBreakdown = {};
+      await Promise.all((audio || []).map(async (t) => {
+        const cId = `song_plays_${sanitizeCounterId(t.title)}`;
+        songsBreakdown[t.title] = await getCounterValue(cId);
+      }));
+
+      const concertsBreakdown = {};
+      await Promise.all((events || []).map(async (evt) => {
+        const cId = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
+        concertsBreakdown[evt.title] = await getCounterValue(cId);
+      }));
+
+      setMetricsData({
+        siteVisits: siteVisits || 0,
+        songPlays: songPlays || 0,
+        enquiryClicks: enquiryClicks || 0,
+        enquirySubmits: enquirySubmits || 0,
+        ticketClicks: ticketClicks || 0,
+        songsBreakdown,
+        concertsBreakdown,
+        socialClicks: {
+          facebook: fbClicks || 0,
+          youtube: ytClicks || 0,
+          instagram: instaClicks || 0,
+          spotify: spotifyClicks || 0
+        }
+      });
+    } catch (err) {
+      console.error('Error fetching realtime metrics:', err);
+    } finally {
+      setMetricsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'metrics') {
+      fetchRealtimeMetrics();
+    }
+  }, [activeTab]);
+
   const ALL_BUILTIN_SECTIONS = [
     { id: 'hero', name: 'Hero Banner & Tagline' },
     { id: 'about', name: 'About Artist & Biography' },
@@ -119,6 +265,7 @@ export default function StudioApp({ onCloseStudio }) {
     fetchGitStatus();
     fetchGitHistory();
     checkConflictStatus();
+    fetchGitConfig();
   }, []);
 
   const handleSyncGitPull = async () => {
@@ -260,6 +407,11 @@ export default function StudioApp({ onCloseStudio }) {
 
   // Publish live to Git & GitHub Pages
   const handlePublishLive = async () => {
+    if (!githubPat || !githubPat.trim()) {
+      alert('GitHub Personal Access Token (PAT) is required to push and publish changes. Please enter your GitHub PAT in the field provided.');
+      return;
+    }
+
     await handleSaveChanges();
 
     const defaultMsg = commitMessage || `Updated website content via MS Music Studio - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
@@ -274,11 +426,12 @@ export default function StudioApp({ onCloseStudio }) {
       const res = await fetch(`${API_BASE}/api/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ commitMessage: defaultMsg })
+        body: JSON.stringify({ commitMessage: defaultMsg, githubPat: githubPat.trim() })
       });
 
       const data = await res.json();
       if (data.success) {
+        setPatSaved(true);
         setPublishProgress({
           step: 'Successfully published to live website!',
           steps: data.steps || ['Saved files', 'Git commit created', 'Pushed to GitHub', 'Deployed live'],
@@ -610,6 +763,8 @@ export default function StudioApp({ onCloseStudio }) {
               { id: 'faqs', label: 'FAQs & Questions', icon: HelpCircle },
               { id: 'socials', label: 'Social Links & Booking', icon: Globe },
               { id: 'order', label: 'Reorder & Hide Sections', icon: Sliders },
+              { id: 'metrics', label: 'Metrics & Analytics', icon: BarChart3 },
+              { id: 'credentials', label: 'GitHub PAT & Credentials', icon: Key },
               { id: 'history', label: 'Version History & Revert', icon: History }
             ].map(tab => {
               const Icon = tab.icon;
@@ -991,26 +1146,34 @@ export default function StudioApp({ onCloseStudio }) {
               {activeTab === 'events' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-amber-400" />
-                      Concerts & Event Schedule
-                    </h2>
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-amber-400" />
+                        Concerts & Event Schedule
+                      </h2>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Manage upcoming concerts, date order, ticketed booking links, and registered click counters.
+                      </p>
+                    </div>
                     <button
                       onClick={() => {
+                        const newTitle = "New Live Concert Evening";
                         setEvents([...events, {
                           id: Date.now(),
-                          title: "New Live Concert Evening",
+                          title: newTitle,
                           date: new Date().toISOString().split('T')[0],
-                          formattedDate: "NOV 20, 2026",
+                          formattedDate: "DEC 20, 2026",
                           time: "6:30 PM IST",
                           venue: "Auditorium Hall",
                           city: "Bengaluru",
                           status: "Available",
-                          category: "Public Concert"
+                          category: "Public Concert",
+                          ticketed: false,
+                          ticketUrl: ""
                         }]);
                         markDirty();
                       }}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       Add Event
@@ -1018,82 +1181,207 @@ export default function StudioApp({ onCloseStudio }) {
                   </div>
 
                   <div className="space-y-4">
-                    {events.map((evt, index) => (
-                      <div key={evt.id || index} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <input
-                            type="text"
-                            value={evt.title || ''}
-                            onChange={e => {
-                              const newE = [...events];
-                              newE[index].title = e.target.value;
-                              setEvents(newE);
-                              markDirty();
-                            }}
-                            className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1 text-sm font-bold text-white w-72 outline-none"
-                          />
-                          <button
-                            onClick={() => {
-                              setEvents(events.filter((_, i) => i !== index));
-                              markDirty();
-                            }}
-                            className="p-1 text-zinc-500 hover:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                    {events.map((evt, index) => {
+                      const counterId = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
+                      return (
+                        <div key={evt.id || index} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4 shadow-md">
+                          <div className="flex justify-between items-center gap-3">
+                            <div className="flex-grow">
+                              <label className="text-[11px] text-zinc-400 font-semibold block mb-1">Concert Title</label>
+                              <input
+                                type="text"
+                                value={evt.title || ''}
+                                onChange={e => {
+                                  const newE = [...events];
+                                  newE[index].title = e.target.value;
+                                  setEvents(newE);
+                                  markDirty();
+                                }}
+                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm font-bold text-white w-full outline-none focus:border-amber-500"
+                              />
+                            </div>
+                            <button
+                              onClick={() => {
+                                setEvents(events.filter((_, i) => i !== index));
+                                markDirty();
+                              }}
+                              className="p-2 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-zinc-800 transition-colors mt-5"
+                              title="Delete Concert"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Date (YYYY-MM-DD)</label>
+                              <input
+                                type="date"
+                                value={evt.date || ''}
+                                onChange={e => {
+                                  const newE = [...events];
+                                  newE[index].date = e.target.value;
+                                  setEvents(newE);
+                                  markDirty();
+                                }}
+                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Formatted Display Date</label>
+                              <input
+                                type="text"
+                                placeholder="OCT 15, 2026"
+                                value={evt.formattedDate || ''}
+                                onChange={e => {
+                                  const newE = [...events];
+                                  newE[index].formattedDate = e.target.value;
+                                  setEvents(newE);
+                                  markDirty();
+                                }}
+                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Concert Time</label>
+                              <input
+                                type="text"
+                                placeholder="6:30 PM IST"
+                                value={evt.time || ''}
+                                onChange={e => {
+                                  const newE = [...events];
+                                  newE[index].time = e.target.value;
+                                  setEvents(newE);
+                                  markDirty();
+                                }}
+                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Category / Genre</label>
+                              <input
+                                type="text"
+                                placeholder="Devotional / Classical / Film"
+                                value={evt.category || ''}
+                                onChange={e => {
+                                  const newE = [...events];
+                                  newE[index].category = e.target.value;
+                                  setEvents(newE);
+                                  markDirty();
+                                }}
+                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Venue Name</label>
+                              <input
+                                type="text"
+                                placeholder="Auditorium / Hall"
+                                value={evt.venue || ''}
+                                onChange={e => {
+                                  const newE = [...events];
+                                  newE[index].venue = e.target.value;
+                                  setEvents(newE);
+                                  markDirty();
+                                }}
+                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">City</label>
+                              <input
+                                type="text"
+                                placeholder="Bengaluru / Mangaluru"
+                                value={evt.city || ''}
+                                onChange={e => {
+                                  const newE = [...events];
+                                  newE[index].city = e.target.value;
+                                  setEvents(newE);
+                                  markDirty();
+                                }}
+                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Ticketed vs Free Toggle */}
+                          <div className="pt-3 border-t border-zinc-800/80 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-3 bg-zinc-950/70 p-3 rounded-xl border border-zinc-800">
+                              <div className="flex items-center gap-2">
+                                <Ticket className="w-4 h-4 text-amber-400" />
+                                <div>
+                                  <span className="text-xs font-bold text-white block">Event Admission & Ticketing</span>
+                                  <span className="text-[10px] text-zinc-400">Choose whether concert is free entry or requires ticket booking</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newE = [...events];
+                                    newE[index].ticketed = false;
+                                    setEvents(newE);
+                                    markDirty();
+                                  }}
+                                  className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+                                    !evt.ticketed ? 'bg-emerald-500 text-black shadow' : 'text-zinc-400 hover:text-white'
+                                  }`}
+                                >
+                                  Free Entry
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newE = [...events];
+                                    newE[index].ticketed = true;
+                                    setEvents(newE);
+                                    markDirty();
+                                  }}
+                                  className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+                                    evt.ticketed ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'
+                                  }`}
+                                >
+                                  Ticketed Event
+                                </button>
+                              </div>
+                            </div>
+
+                            {evt.ticketed && (
+                              <div className="space-y-1.5 bg-amber-500/5 p-3 rounded-xl border border-amber-500/20">
+                                <label className="text-xs text-amber-300 font-bold flex items-center gap-1.5">
+                                  <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+                                  Book Ticket URL (Where visitor will be redirected to buy tickets)
+                                </label>
+                                <input
+                                  type="url"
+                                  placeholder="https://in.bookmyshow.com/... or https://insider.in/..."
+                                  value={evt.ticketUrl || ''}
+                                  onChange={e => {
+                                    const newE = [...events];
+                                    newE[index].ticketUrl = e.target.value;
+                                    setEvents(newE);
+                                    markDirty();
+                                  }}
+                                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-500"
+                                />
+                                <div className="text-[11px] text-zinc-400 flex items-center gap-2 pt-1 font-mono">
+                                  <span>Registered Click Counter:</span>
+                                  <span className="bg-zinc-900 text-amber-400 px-2 py-0.5 rounded border border-zinc-800">
+                                    {counterId}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          <input
-                            type="text"
-                            placeholder="Formatted Date (OCT 15, 2026)"
-                            value={evt.formattedDate || ''}
-                            onChange={e => {
-                              const newE = [...events];
-                              newE[index].formattedDate = e.target.value;
-                              setEvents(newE);
-                              markDirty();
-                            }}
-                            className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white outline-none"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Time"
-                            value={evt.time || ''}
-                            onChange={e => {
-                              const newE = [...events];
-                              newE[index].time = e.target.value;
-                              setEvents(newE);
-                              markDirty();
-                            }}
-                            className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white outline-none"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Venue"
-                            value={evt.venue || ''}
-                            onChange={e => {
-                              const newE = [...events];
-                              newE[index].venue = e.target.value;
-                              setEvents(newE);
-                              markDirty();
-                            }}
-                            className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white outline-none"
-                          />
-                          <input
-                            type="text"
-                            placeholder="City"
-                            value={evt.city || ''}
-                            onChange={e => {
-                              const newE = [...events];
-                              newE[index].city = e.target.value;
-                              setEvents(newE);
-                              markDirty();
-                            }}
-                            className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white outline-none"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1698,7 +1986,392 @@ export default function StudioApp({ onCloseStudio }) {
                 </div>
               )}
 
-              {/* 11. VERSION HISTORY & REVERT TAB */}
+              {/* 12. METRICS & ANALYTICS TAB */}
+              {activeTab === 'metrics' && (
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-amber-400" />
+                        Website Metrics & Realtime Analytics
+                      </h2>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Monitor site loads, audio track plays, ticket booking clicks, and booking enquiries powered by API Ninjas realtime counters.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={fetchRealtimeMetrics}
+                      disabled={metricsLoading}
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${metricsLoading ? 'animate-spin' : ''}`} />
+                      <span>{metricsLoading ? 'Fetching Realtime Counters...' : 'Refresh Realtime Metrics'}</span>
+                    </button>
+                  </div>
+
+                  {/* TOP KPI CARDS */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
+                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
+                        <span>Site Visits</span>
+                        <Eye className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+                        {metricsLoading ? '...' : (metricsData.siteVisits || 0).toLocaleString()}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 block">Total site loads</span>
+                    </div>
+
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
+                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
+                        <span>Song Plays</span>
+                        <Music className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">
+                        {metricsLoading ? '...' : (metricsData.songPlays || 0).toLocaleString()}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 block">Tracks played live</span>
+                    </div>
+
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
+                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
+                        <span>Ticket Clicks</span>
+                        <Ticket className="w-4 h-4 text-rose-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-rose-400 font-mono">
+                        {metricsLoading ? '...' : (metricsData.ticketClicks || 0).toLocaleString()}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 block">Book ticket clicks</span>
+                    </div>
+
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1">
+                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
+                        <span>Enquiry Views</span>
+                        <FileText className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-blue-400 font-mono">
+                        {metricsLoading ? '...' : (metricsData.enquiryClicks || 0).toLocaleString()}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 block">Form visits / tabs</span>
+                    </div>
+
+                    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-2xl space-y-1 col-span-2 md:col-span-1">
+                      <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold">
+                        <span>Enquiries Sent</span>
+                        <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">
+                        {metricsLoading ? '...' : (metricsData.enquirySubmits || 0).toLocaleString()}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 block">Completed submissions</span>
+                    </div>
+                  </div>
+
+                  {/* CONVERSION FUNNEL BAR */}
+                  <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl space-y-3">
+                    <h3 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-amber-400" />
+                      Audience Engagement & Growth Funnel
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 pt-2">
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
+                        <span className="text-[11px] text-zinc-400 block font-semibold">1. Site Visitors</span>
+                        <span className="text-lg font-bold text-white font-mono">{metricsData.siteVisits || 0}</span>
+                        <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                          <div className="bg-amber-400 h-full w-full"></div>
+                        </div>
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
+                        <span className="text-[11px] text-zinc-400 block font-semibold">2. Listened to Music</span>
+                        <span className="text-lg font-bold text-emerald-400 font-mono">{metricsData.songPlays || 0}</span>
+                        <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                          <div 
+                            className="bg-emerald-400 h-full"
+                            style={{ width: `${Math.min(100, Math.max(5, metricsData.siteVisits ? Math.round((metricsData.songPlays / metricsData.siteVisits) * 100) : 0))}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
+                        <span className="text-[11px] text-zinc-400 block font-semibold">3. Enquiry / Tickets</span>
+                        <span className="text-lg font-bold text-blue-400 font-mono">{(metricsData.enquiryClicks || 0) + (metricsData.ticketClicks || 0)}</span>
+                        <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                          <div 
+                            className="bg-blue-400 h-full"
+                            style={{ width: `${Math.min(100, Math.max(5, metricsData.siteVisits ? Math.round(((metricsData.enquiryClicks + metricsData.ticketClicks) / metricsData.siteVisits) * 100) : 0))}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80">
+                        <span className="text-[11px] text-zinc-400 block font-semibold">4. Form Submissions</span>
+                        <span className="text-lg font-bold text-purple-400 font-mono">{metricsData.enquirySubmits || 0}</span>
+                        <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                          <div 
+                            className="bg-purple-400 h-full"
+                            style={{ width: `${Math.min(100, Math.max(5, metricsData.siteVisits ? Math.round((metricsData.enquirySubmits / metricsData.siteVisits) * 100) : 0))}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PER-SONG AUDIO PLAYS BREAKDOWN */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Music className="w-4 h-4 text-emerald-400" />
+                        Per-Song Plays Breakdown
+                      </h3>
+                      <span className="text-xs text-zinc-400 font-mono">
+                        {audio.length} Studio Tracks Tracked
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {audio.map((track, i) => {
+                        const count = metricsData.songsBreakdown[track.title] || 0;
+                        const maxCount = Math.max(...Object.values(metricsData.songsBreakdown || {}), 1);
+                        const pct = Math.round((count / maxCount) * 100);
+
+                        return (
+                          <div key={track.id || i} className="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800/60 space-y-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-xs font-mono font-bold text-zinc-500">#{i + 1}</span>
+                                <div>
+                                  <span className="text-xs font-bold text-white block">{track.title}</span>
+                                  <span className="text-[10px] text-zinc-400">
+                                    {[track.language, track.genre, track.duration].filter(Boolean).join(' • ')}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm font-bold text-emerald-400 font-mono">{count} plays</span>
+                                <span className="text-[10px] text-zinc-500 block font-mono">song_plays_{sanitizeCounterId(track.title)}</span>
+                              </div>
+                            </div>
+
+                            <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-emerald-500 to-amber-400 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${Math.max(4, pct)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* PER-CONCERT TICKET BOOKINGS */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Ticket className="w-4 h-4 text-rose-400" />
+                        Concert Ticket Booking Clicks Breakdown
+                      </h3>
+                      <span className="text-xs text-zinc-400 font-mono">
+                        {events.length} Concerts Configured
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {events.map((evt, i) => {
+                        const count = metricsData.concertsBreakdown[evt.title] || 0;
+                        const counterId = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
+
+                        return (
+                          <div key={evt.id || i} className="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800/60 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-white">{evt.title}</span>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                                  evt.ticketed ? 'bg-amber-500/20 text-amber-300' : 'bg-zinc-800 text-zinc-400'
+                                }`}>
+                                  {evt.ticketed ? 'Ticketed' : 'Free Entry'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-zinc-400 mt-0.5">
+                                {[evt.formattedDate || evt.date, evt.venue, evt.city].filter(Boolean).join(' • ')}
+                              </p>
+                              <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                                Counter ID: {counterId}
+                              </span>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="text-base font-bold text-rose-400 font-mono">{count} clicks</span>
+                              {evt.ticketUrl && (
+                                <a
+                                  href={evt.ticketUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[10px] text-amber-400 hover:underline flex items-center gap-1 justify-end mt-0.5"
+                                >
+                                  <span>View Ticket Link</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* SOCIAL OUTREACH CLICKS */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-zinc-800 pb-3">
+                      <Share2 className="w-4 h-4 text-amber-400" />
+                      Social Media & Channel Click Counters
+                    </h3>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                        <span className="text-xs text-blue-400 font-bold block">Facebook</span>
+                        <span className="text-xl font-mono font-bold text-white mt-1 block">{metricsData.socialClicks?.facebook || 0}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">social_clicks_facebook</span>
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                        <span className="text-xs text-red-400 font-bold block">YouTube</span>
+                        <span className="text-xl font-mono font-bold text-white mt-1 block">{metricsData.socialClicks?.youtube || 0}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">social_clicks_youtube</span>
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                        <span className="text-xs text-pink-400 font-bold block">Instagram</span>
+                        <span className="text-xl font-mono font-bold text-white mt-1 block">{metricsData.socialClicks?.instagram || 0}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">social_clicks_instagram</span>
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                        <span className="text-xs text-emerald-400 font-bold block">Spotify</span>
+                        <span className="text-xl font-mono font-bold text-white mt-1 block">{metricsData.socialClicks?.spotify || 0}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">social_clicks_spotify</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* 13. GITHUB PAT & CREDENTIALS TAB */}
+              {activeTab === 'credentials' && (
+                <div className="space-y-6">
+                  <div className="border-b border-zinc-800 pb-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <Key className="w-5 h-5 text-amber-400" />
+                      GitHub PAT & Credentials Settings
+                    </h2>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Configure your GitHub Personal Access Token (PAT). It is securely stored on your local computer and used every time you publish live website changes.
+                    </p>
+                  </div>
+
+                  {/* Credentials Card */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-5 shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-amber-400" />
+                        GitHub Personal Access Token (PAT)
+                      </span>
+
+                      {patSaved && (
+                        <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Saved Locally
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <input
+                          type={showPat ? 'text' : 'password'}
+                          placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                          value={githubPat}
+                          onChange={e => {
+                            setGithubPat(e.target.value);
+                            setPatSaved(false);
+                          }}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs sm:text-sm font-mono text-white outline-none focus:border-amber-500 pr-20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPat(!showPat)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-400 hover:text-white"
+                        >
+                          {showPat ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      <span className="text-[11px] text-zinc-500 block">
+                        Saved in <code className="text-zinc-400">studio/git-config.json</code> on your machine.
+                      </span>
+                    </div>
+
+                    {/* Test result message */}
+                    {patTestResult && (
+                      <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                        patTestResult.success 
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' 
+                          : 'bg-red-500/10 border-red-500/30 text-red-300'
+                      }`}>
+                        {patTestResult.success ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span>Successfully verified! Authenticated as GitHub user <strong>{patTestResult.login}</strong> ({patTestResult.name || 'Personal Account'}).</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>Verification error: {patTestResult.error}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                      <button
+                        onClick={handleSaveGitConfig}
+                        className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Save Credentials</span>
+                      </button>
+
+                      <button
+                        onClick={handleTestPat}
+                        disabled={isTestingPat || !githubPat}
+                        className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs border border-zinc-700 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-amber-400" />
+                        <span>{isTestingPat ? 'Verifying...' : 'Verify PAT with GitHub'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Guide Card */}
+                  <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 space-y-3 text-xs text-zinc-400">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <Info className="w-4 h-4 text-amber-400" />
+                      How to generate your GitHub Personal Access Token (PAT):
+                    </h3>
+                    <ol className="list-decimal list-inside space-y-1.5 pl-1 leading-relaxed">
+                      <li>Log in to your GitHub account and go to <strong>Settings &gt; Developer Settings</strong>.</li>
+                      <li>Click on <strong>Personal access tokens &gt; Tokens (classic)</strong>.</li>
+                      <li>Click <strong>Generate new token (classic)</strong>.</li>
+                      <li>Set Note to <code className="text-amber-400">MS Music Studio</code> and select expiration (e.g. 90 days or No expiration).</li>
+                      <li>Check the <strong className="text-zinc-200">repo</strong> scope checkbox (Full control of private repositories) and <strong className="text-zinc-200">workflow</strong>.</li>
+                      <li>Click <strong>Generate token</strong> at the bottom, copy the token string, and paste it into the field above.</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
               {activeTab === 'history' && (
                 <div className="space-y-6">
                   <div className="border-b border-zinc-800 pb-4">
@@ -1783,6 +2456,45 @@ export default function StudioApp({ onCloseStudio }) {
                   Publishing will save your content changes, commit them to your Git repository, and update the live website on GitHub Pages.
                 </p>
 
+                {/* PAT CREDENTIALS CHECK / PROMPT */}
+                {!githubPat || !githubPat.trim() ? (
+                  <div className="bg-amber-500/10 border border-amber-500/40 p-3.5 rounded-xl space-y-2.5">
+                    <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                      <Key className="w-4 h-4 shrink-0" />
+                      <span>GitHub Personal Access Token (PAT) Required</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-300 leading-relaxed">
+                      A GitHub PAT is required to authenticate your pushes to GitHub. Please enter it below. It will be stored securely on your local computer for future updates:
+                    </p>
+                    <input
+                      type="password"
+                      placeholder="Paste your GitHub PAT (ghp_...)"
+                      value={githubPat}
+                      onChange={e => setGithubPat(e.target.value)}
+                      className="w-full bg-zinc-950 border border-amber-500/50 rounded-lg px-3 py-2 text-xs font-mono text-white outline-none focus:border-amber-400"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span className="text-zinc-300">
+                        Authenticated with GitHub PAT: <strong className="text-white font-mono">{githubPat.slice(0, 4)}••••••••{githubPat.slice(-4)}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPublishModalOpen(false);
+                        setActiveTab('credentials');
+                      }}
+                      className="text-[11px] text-amber-400 hover:underline"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-semibold text-zinc-400 mb-1">Update Log Note (Optional)</label>
                   <input
@@ -1797,13 +2509,14 @@ export default function StudioApp({ onCloseStudio }) {
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
                     onClick={() => setIsPublishModalOpen(false)}
-                    className="px-4 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800"
+                    className="px-4 py-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handlePublishLive}
-                    className="px-5 py-2 rounded-lg text-xs font-bold text-black bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 shadow-md flex items-center gap-1.5"
+                    disabled={!githubPat || !githubPat.trim()}
+                    className="px-5 py-2 rounded-lg text-xs font-bold text-black bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <Globe className="w-4 h-4" />
                     🚀 Push Live Now

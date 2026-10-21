@@ -42,12 +42,13 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 // Content directory
 const CONTENT_DIR = path.join(ROOT_DIR, 'src', 'content');
+const GIT_CONFIG_PATH = path.join(__dirname, 'git-config.json');
 
 // Helper to set CORS headers
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 // Helper to read JSON request body
@@ -130,6 +131,28 @@ function parseMultipartForm(req) {
   });
 }
 
+// Helper to get Git Push Command with PAT
+function getGitPushCommand() {
+  let gitPat = '';
+  try {
+    if (fs.existsSync(GIT_CONFIG_PATH)) {
+      const cfg = JSON.parse(fs.readFileSync(GIT_CONFIG_PATH, 'utf8'));
+      gitPat = cfg.githubPat || '';
+    }
+  } catch (e) {}
+
+  let remoteUrl = '';
+  try {
+    remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
+  } catch (e) {}
+
+  if (gitPat && remoteUrl.startsWith('https://')) {
+    const urlWithoutProto = remoteUrl.replace(/^https:\/\/[^@]*@?/, '');
+    return `git push https://${encodeURIComponent(gitPat)}@${urlWithoutProto} main`;
+  }
+  return 'git push origin main';
+}
+
 // Generators for JS content files
 function generateHeroJs(data) {
   const bgImport = data.heroImage && data.heroImage.startsWith('/uploads/') 
@@ -161,8 +184,8 @@ export const heroContent = {
 }
 
 function generateAboutJs(data) {
-  const portrait = data.portraitImage && data.portraitImage.startsWith('/uploads/')
-    ? `"${data.portraitImage}"`
+  const portrait = data.portraitImage && data.portraitImage.startsWith('/uploads/') 
+    ? `"${data.portraitImage}"` 
     : `picRedKurta`;
 
   let code = ``;
@@ -239,7 +262,9 @@ function generateEventsJs(data) {
     venue: ${JSON.stringify(item.venue || "")},
     city: ${JSON.stringify(item.city || "")},
     status: ${JSON.stringify(item.status || "Available")},
-    category: ${JSON.stringify(item.category || "Public Concert")}
+    category: ${JSON.stringify(item.category || "Public Concert")},
+    ticketed: ${Boolean(item.ticketed)},
+    ticketUrl: ${JSON.stringify(item.ticketUrl || "")}
   }`).join(',\n');
 
   return `export const eventsContent = [\n${itemsCode}\n];`;
@@ -336,22 +361,6 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
-    // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
-      return;
-    }
-    // End of git-status handling
     return;
   }
 
@@ -369,23 +378,7 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: pullErr.message }));
       }
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
-    }
-    // End of git-status handling
-    return;
     }
 
     // 1. GET /api/git-status
@@ -418,23 +411,7 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ branch, isClean, pendingCount, lastCommit, remoteUrl, hasConflict }));
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
-    }
-    // End of git-status handling
-    return;
     }
 
     // 2. GET /api/git-history (Version History)
@@ -454,26 +431,43 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ history }));
-      // 3. POST /api/save-git-config – store GitHub PAT locally
+      return;
+    }
+
+    // 3. GET & POST /api/git-config (PAT & Credentials Management)
+    if (pathname === '/api/git-config' && req.method === 'GET') {
+      let githubPat = '';
+      try {
+        if (fs.existsSync(GIT_CONFIG_PATH)) {
+          const cfg = JSON.parse(fs.readFileSync(GIT_CONFIG_PATH, 'utf8'));
+          githubPat = cfg.githubPat || '';
+        }
+      } catch (e) {}
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        hasPat: Boolean(githubPat),
+        maskedPat: githubPat ? `${githubPat.slice(0, 4)}••••••••${githubPat.slice(-4)}` : '',
+        githubPat: githubPat
+      }));
+      return;
+    }
+
     if (pathname === '/api/save-git-config' && req.method === 'POST') {
       const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
+      const gitPat = (body.githubPat || '').trim();
       try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
+        fs.writeFileSync(GIT_CONFIG_PATH, JSON.stringify({ githubPat: gitPat, updatedAt: new Date().toISOString() }, null, 2));
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
+        res.end(JSON.stringify({ success: true, message: 'GitHub PAT credentials saved successfully' }));
       } catch (e) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: e.message }));
       }
       return;
     }
-    // End of git-status handling
-    return;
-    }
 
-    // 3. POST /api/revert-version
+    // 4. POST /api/revert-version
     if (pathname === '/api/revert-version' && req.method === 'POST') {
       const body = await readJsonBody(req);
       const targetHash = body.commitHash;
@@ -482,30 +476,13 @@ const server = http.createServer(async (req, res) => {
       if (!targetHash) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Commit hash is required' }));
-        // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
-      return;
-    }
-    // End of git-status handling
-    return;
+        return;
       }
 
       const steps = [];
       try {
         steps.push(`Fetching target commit content (${targetShort})...`);
         
-        // Checkout content files from that commit
         try {
           execSync(`git checkout ${targetHash} -- src/content/`, { cwd: ROOT_DIR });
           steps.push('Restored site content files from selected version.');
@@ -514,37 +491,17 @@ const server = http.createServer(async (req, res) => {
           execSync(`git revert ${targetHash} --no-edit`, { cwd: ROOT_DIR });
         }
 
-        // Commit restored state
         steps.push('Creating new publish commit for restored version...');
         execSync(`git add src/content/ public/uploads/`, { cwd: ROOT_DIR });
         
         const commitMsg = `Reverted & Restored website to version (${targetShort}) via MS Music Studio`;
         try {
           execSync(`git commit -m "${commitMsg}"`, { cwd: ROOT_DIR });
-        } catch (commitErr) {
-          // Commit might be clean
-        }
+        } catch (commitErr) {}
 
         steps.push('Pushing restored version live to GitHub...');
-        // Use stored GitHub PAT for authentication if available
-    const gitConfigPath = path.join(ROOT_DIR, 'studio', 'git-config.json');
-    let gitPat = '';
-    try {
-      const cfg = JSON.parse(fs.readFileSync(gitConfigPath, 'utf8'));
-      gitPat = cfg.githubPat || '';
-    } catch (e) {}
-    // Determine remote URL and inject PAT
-    let remoteUrl = '';
-    try {
-      remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
-    } catch (e) {}
-    // Transform https://github.com/user/repo.git to https://<PAT>@github.com/user/repo.git
-    let pushCmd = 'git push origin main';
-    if (gitPat && remoteUrl.startsWith('https://')) {
-      const urlWithoutProto = remoteUrl.replace('https://', '');
-      pushCmd = `git push https://${gitPat}@${urlWithoutProto} main`;
-    }
-    execSync(pushCmd, { cwd: ROOT_DIR });
+        const pushCmd = getGitPushCommand();
+        execSync(pushCmd, { cwd: ROOT_DIR });
 
         steps.push('Deploying live website...');
         try {
@@ -562,7 +519,6 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         console.error('Revert error:', err.message);
 
-        // Check if conflict occurred
         let isConflict = false;
         let conflictFiles = [];
         try {
@@ -582,26 +538,10 @@ const server = http.createServer(async (req, res) => {
           conflictFiles
         }));
       }
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
     }
-    // End of git-status handling
-    return;
-    }
 
-    // 4. GET /api/conflict-status
+    // 5. GET /api/conflict-status
     if (pathname === '/api/conflict-status' && req.method === 'GET') {
       let inConflict = false;
       let conflictFiles = [];
@@ -626,29 +566,13 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ inConflict, conflictFiles }));
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
     }
-    // End of git-status handling
-    return;
-    }
 
-    // 5. POST /api/resolve-conflict
+    // 6. POST /api/resolve-conflict
     if (pathname === '/api/resolve-conflict' && req.method === 'POST') {
       const body = await readJsonBody(req);
-      const strategy = body.strategy || 'keep_mine'; // 'keep_mine' | 'use_restored' | 'abort'
+      const strategy = body.strategy || 'keep_mine';
 
       const steps = [];
       try {
@@ -657,50 +581,16 @@ const server = http.createServer(async (req, res) => {
           execSync('git checkout --ours .', { cwd: ROOT_DIR });
           execSync('git add .', { cwd: ROOT_DIR });
           execSync('git commit -m "Resolved merge conflict: Kept current version"', { cwd: ROOT_DIR });
-          // Use stored GitHub PAT for authentication if available
-    const gitConfigPath = path.join(ROOT_DIR, 'studio', 'git-config.json');
-    let gitPat = '';
-    try {
-      const cfg = JSON.parse(fs.readFileSync(gitConfigPath, 'utf8'));
-      gitPat = cfg.githubPat || '';
-    } catch (e) {}
-    // Determine remote URL and inject PAT
-    let remoteUrl = '';
-    try {
-      remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
-    } catch (e) {}
-    // Transform https://github.com/user/repo.git to https://<PAT>@github.com/user/repo.git
-    let pushCmd = 'git push origin main';
-    if (gitPat && remoteUrl.startsWith('https://')) {
-      const urlWithoutProto = remoteUrl.replace('https://', '');
-      pushCmd = `git push https://${gitPat}@${urlWithoutProto} main`;
-    }
-    execSync(pushCmd, { cwd: ROOT_DIR });
+          const pushCmd = getGitPushCommand();
+          execSync(pushCmd, { cwd: ROOT_DIR });
           steps.push('Conflict resolved and pushed live!');
         } else if (strategy === 'use_restored') {
           steps.push('Resolving conflicts: Using target restored version (--theirs)...');
           execSync('git checkout --theirs .', { cwd: ROOT_DIR });
           execSync('git add .', { cwd: ROOT_DIR });
           execSync('git commit -m "Resolved merge conflict: Used restored version"', { cwd: ROOT_DIR });
-          // Use stored GitHub PAT for authentication if available
-    const gitConfigPath = path.join(ROOT_DIR, 'studio', 'git-config.json');
-    let gitPat = '';
-    try {
-      const cfg = JSON.parse(fs.readFileSync(gitConfigPath, 'utf8'));
-      gitPat = cfg.githubPat || '';
-    } catch (e) {}
-    // Determine remote URL and inject PAT
-    let remoteUrl = '';
-    try {
-      remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
-    } catch (e) {}
-    // Transform https://github.com/user/repo.git to https://<PAT>@github.com/user/repo.git
-    let pushCmd = 'git push origin main';
-    if (gitPat && remoteUrl.startsWith('https://')) {
-      const urlWithoutProto = remoteUrl.replace('https://', '');
-      pushCmd = `git push https://${gitPat}@${urlWithoutProto} main`;
-    }
-    execSync(pushCmd, { cwd: ROOT_DIR });
+          const pushCmd = getGitPushCommand();
+          execSync(pushCmd, { cwd: ROOT_DIR });
           steps.push('Conflict resolved and restored version published live!');
         } else if (strategy === 'abort') {
           steps.push('Aborting merge / revert process...');
@@ -719,48 +609,16 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: err.message, steps }));
       }
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
     }
-    // End of git-status handling
-    return;
-    }
 
-    // 6. POST /api/upload
+    // 7. POST /api/upload
     if (pathname === '/api/upload' && req.method === 'POST') {
       const { fields, files } = await parseMultipartForm(req);
       if (!files || files.length === 0) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'No file uploaded' }));
-        // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
-      return;
-    }
-    // End of git-status handling
-    return;
+        return;
       }
 
       const uploadedFile = files[0];
@@ -797,33 +655,21 @@ const server = http.createServer(async (req, res) => {
       }
 
       const publicUrl = `/uploads/${filename}`;
+      // Track asset counter identifier
+      const assetCounterName = `asset_${cleanName}_views_counter`;
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: true,
         url: publicUrl,
         filename: filename,
-        mimeType: uploadedFile.mimeType
+        mimeType: uploadedFile.mimeType,
+        counterName: assetCounterName
       }));
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
     }
-    // End of git-status handling
-    return;
-    }
 
-    // 7. POST /api/save-content
+    // 8. POST /api/save-content
     if (pathname === '/api/save-content' && req.method === 'POST') {
       const body = await readJsonBody(req);
       
@@ -840,29 +686,36 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, message: 'Content saved successfully' }));
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
     }
-    // End of git-status handling
-    return;
-    }
 
-    // 8. POST /api/publish
+    // 9. POST /api/publish
     if (pathname === '/api/publish' && req.method === 'POST') {
       const body = await readJsonBody(req);
       const commitMsg = body.commitMessage || `Site content updated via MS Music Studio (${new Date().toLocaleString()})`;
+
+      // Verify and handle GitHub PAT
+      let gitPat = (body.githubPat || '').trim();
+      if (gitPat) {
+        try {
+          fs.writeFileSync(GIT_CONFIG_PATH, JSON.stringify({ githubPat: gitPat, updatedAt: new Date().toISOString() }, null, 2));
+        } catch (e) {}
+      } else if (fs.existsSync(GIT_CONFIG_PATH)) {
+        try {
+          const cfg = JSON.parse(fs.readFileSync(GIT_CONFIG_PATH, 'utf8'));
+          gitPat = (cfg.githubPat || '').trim();
+        } catch (e) {}
+      }
+
+      if (!gitPat) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: false,
+          missingPat: true,
+          error: 'GitHub Personal Access Token (PAT) is required to publish website changes. Please enter your GitHub PAT in Settings or in the publish prompt.'
+        }));
+        return;
+      }
 
       const steps = [];
       try {
@@ -873,25 +726,8 @@ const server = http.createServer(async (req, res) => {
         execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: ROOT_DIR });
 
         steps.push('Pushing to GitHub...');
-        // Use stored GitHub PAT for authentication if available
-    const gitConfigPath = path.join(ROOT_DIR, 'studio', 'git-config.json');
-    let gitPat = '';
-    try {
-      const cfg = JSON.parse(fs.readFileSync(gitConfigPath, 'utf8'));
-      gitPat = cfg.githubPat || '';
-    } catch (e) {}
-    // Determine remote URL and inject PAT
-    let remoteUrl = '';
-    try {
-      remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
-    } catch (e) {}
-    // Transform https://github.com/user/repo.git to https://<PAT>@github.com/user/repo.git
-    let pushCmd = 'git push origin main';
-    if (gitPat && remoteUrl.startsWith('https://')) {
-      const urlWithoutProto = remoteUrl.replace('https://', '');
-      pushCmd = `git push https://${gitPat}@${urlWithoutProto} main`;
-    }
-    execSync(pushCmd, { cwd: ROOT_DIR });
+        const pushCmd = getGitPushCommand();
+        execSync(pushCmd, { cwd: ROOT_DIR });
 
         steps.push('Building & Deploying to GitHub Pages...');
         try {
@@ -913,23 +749,7 @@ const server = http.createServer(async (req, res) => {
           steps
         }));
       }
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
-    }
-    // End of git-status handling
-    return;
     }
 
     // Static uploaded files serving
@@ -960,23 +780,7 @@ const server = http.createServer(async (req, res) => {
         const contentType = contentTypes[ext] || 'application/octet-stream';
         res.writeHead(200, { 'Content-Type': contentType });
         fs.createReadStream(filePath).pipe(res);
-        // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
-      return;
-    }
-    // End of git-status handling
-    return;
+        return;
       }
     }
 
@@ -1010,23 +814,7 @@ const server = http.createServer(async (req, res) => {
       const contentType = contentTypes[ext] || 'application/octet-stream';
       res.writeHead(200, { 'Content-Type': contentType });
       fs.createReadStream(staticFilePath).pipe(res);
-      // 3. POST /api/save-git-config – store GitHub PAT locally
-    if (pathname === '/api/save-git-config' && req.method === 'POST') {
-      const body = await readJsonBody(req);
-      const gitPat = body.githubPat || '';
-      const cfgPath = path.join(__dirname, 'git-config.json');
-      try {
-        fs.writeFileSync(cfgPath, JSON.stringify({ githubPat: gitPat }, null, 2));
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Git PAT saved' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: e.message }));
-      }
       return;
-    }
-    // End of git-status handling
-    return;
     }
 
     res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -1050,4 +838,3 @@ server.listen(PORT, () => {
   console.log(`[MS Studio API] Server running on http://localhost:${PORT}`);
   autoPullLatest();
 });
-

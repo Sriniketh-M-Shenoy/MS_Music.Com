@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Send, CheckCircle2, Phone, User, MessageSquare, ExternalLink, FileSpreadsheet, Calendar, Clock } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { incrementCounter } from '../utils/metrics';
 
 function formatGoogleFormEmbedUrl(url) {
   if (!url || url.includes('dummyFormIdHere')) {
@@ -66,6 +67,7 @@ export default function EnquirySection() {
 
   const copyEmailToClipboard = (e) => {
     if (e) e.preventDefault();
+    incrementCounter('enquiry_form_submits');
     const email = siteConfig.socials?.email || "booking.muralidharshenoy@gmail.com";
     try {
       navigator.clipboard.writeText(email);
@@ -77,6 +79,7 @@ export default function EnquirySection() {
 
   const handleDirectSubmit = (e) => {
     e.preventDefault();
+    incrementCounter('enquiry_form_submits');
     setSubmitted(true);
     const email = siteConfig.socials?.email || "booking.muralidharshenoy@gmail.com";
     const subject = encodeURIComponent(`Concert Booking Enquiry from ${formData.name}`);
@@ -193,6 +196,7 @@ export default function EnquirySection() {
                   href={directUrl}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => incrementCounter('enquiry_form_clicks')}
                   className="inline-flex items-center gap-2 bg-white/10 hover:bg-amber-500 hover:text-black text-amber-400 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-amber-400/30"
                 >
                   <span>Open Form in New Tab</span>

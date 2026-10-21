@@ -12,6 +12,7 @@ import EnquirySection from './EnquirySection';
 import CustomSection from './CustomSection';
 import Footer from './Footer';
 import { SiteConfigContext, siteConfig as defaultSiteConfig } from '../config/siteConfig';
+import { incrementCounter } from '../utils/metrics';
 
 function getLiveDraft() {
   try {
@@ -33,6 +34,7 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', handleDraftUpdate);
       window.addEventListener('ms_draft_updated', handleDraftUpdate);
+      incrementCounter('site_visits');
     }
     return () => {
       if (typeof window !== 'undefined') {

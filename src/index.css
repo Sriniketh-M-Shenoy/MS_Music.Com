@@ -81,3 +81,72 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #44444a;
 }
+
+/* LIGHT MODE SUPPORT */
+.light-mode {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.light-mode section {
+  background-color: #f8fafc !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light-mode .apple-bento {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-mode .apple-bento:hover {
+  background: #ffffff !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.light-mode h1, .light-mode h2, .light-mode h3, .light-mode h4 {
+  color: #0f172a !important;
+}
+
+.light-mode p {
+  color: #334155 !important;
+}
+
+.light-mode .apple-text-gradient {
+  background: linear-gradient(180deg, #0f172a 0%, #475569 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.light-mode nav {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light-mode nav a {
+  color: #334155 !important;
+}
+
+.light-mode nav a:hover {
+  color: #0f172a !important;
+}
+
+.light-mode nav .text-white {
+  color: #0f172a !important;
+}
+
+.light-mode .apple-player-bar {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+
+.light-mode footer {
+  background-color: #f1f5f9 !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.light-mode footer .text-white {
+  color: #0f172a !important;
+}

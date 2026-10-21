@@ -4,6 +4,7 @@ import picMicBlack from '../assets/gallery/pic_mic_black.png';
 import picTshirt from '../assets/gallery/pic_tshirt.png';
 import heroBg from '../assets/hero/hero_background.png';
 import msSignature from '../assets/branding/ms_signature.png';
+import msSignatureWhite from '../assets/branding/ms_signature_white.jpg';
 
 const assetMap = {
   picSingingMic,
@@ -11,7 +12,9 @@ const assetMap = {
   picMicBlack,
   picTshirt,
   heroBg,
-  msSignature
+  msSignature,
+  msSignatureWhite,
+  Signature_White: msSignatureWhite
 };
 
 export function resolveImageSrc(src) {
@@ -22,6 +25,7 @@ export function resolveImageSrc(src) {
     if (assetMap[trimmed]) return assetMap[trimmed];
 
     // Check embedded asset filenames from historic file paths
+    if (trimmed.includes('Signature_White') || trimmed.includes('ms_signature_white')) return msSignatureWhite;
     if (trimmed.includes('pic_singing_mic')) return picSingingMic;
     if (trimmed.includes('pic_mic_black')) return picMicBlack;
     if (trimmed.includes('pic_red_kurta')) return picRedKurta;

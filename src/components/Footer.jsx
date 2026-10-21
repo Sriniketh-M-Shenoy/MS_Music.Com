@@ -1,13 +1,18 @@
 import React from 'react';
 import { Instagram, Facebook, Youtube, ArrowUp } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
+import { useTheme } from '../utils/theme';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 export default function Footer() {
   const siteConfig = useSiteConfig();
+  const { signatureSrc } = useTheme();
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const activeSignature = signatureSrc || resolveImageSrc(siteConfig.artist.signatureImage);
 
   return (
     <footer className="bg-black border-t border-white/10 pt-12 sm:pt-20 pb-8 sm:pb-12 relative">
@@ -17,9 +22,9 @@ export default function Footer() {
           
           <div className="sm:col-span-2 md:col-span-5 space-y-4">
             <img
-              src={resolveImageSrc(siteConfig.artist.signatureImage)}
+              src={activeSignature}
               alt="Muralidhar Shenoy Signature"
-              className="h-14 sm:h-18 w-auto object-contain -ml-2 opacity-95"
+              className="h-14 sm:h-18 w-auto object-contain -ml-2 opacity-95 filter brightness-105"
             />
 
             <p className="text-xs text-gray-400 leading-relaxed max-w-sm">
@@ -94,7 +99,7 @@ export default function Footer() {
 
           <button
             onClick={scrollToTop}
-            className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+            className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             title="Back to Top"
           >
             <ArrowUp className="w-4 h-4" />
