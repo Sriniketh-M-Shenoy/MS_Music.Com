@@ -6,14 +6,14 @@ export default function IntroLoader({ onComplete }) {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    // 3.3s matches the signature signing duration
+    // 2.35s matches the accelerated 1.3x signature signing duration
     const timer = setTimeout(() => {
       setIsExiting(true);
-    }, 3300);
+    }, 2350);
 
     const completeTimer = setTimeout(() => {
       if (onComplete) onComplete();
-    }, 4000);
+    }, 2900);
 
     return () => {
       clearTimeout(timer);
