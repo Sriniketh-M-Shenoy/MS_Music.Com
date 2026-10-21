@@ -19,7 +19,8 @@ import {
   galleryContent as initialGallery,
   testimonialsContent as initialTestimonials,
   faqsContent as initialFaqs,
-  sectionConfig as initialSectionConfig
+  sectionConfig as initialSectionConfig,
+  videosContent as initialVideos
 } from '../content';
 
 import MainSiteView from '../components/MainSiteView';
@@ -51,6 +52,7 @@ export default function StudioApp({ onCloseStudio }) {
   const [about, setAbout] = useState(() => getInitialDraft('about', initialAbout));
   const [socials, setSocials] = useState(() => getInitialDraft('socials', initialSocials));
   const [posts, setPosts] = useState(() => getInitialDraft('posts', initialPosts));
+  const [videos, setVideos] = useState(() => getInitialDraft('videos', initialVideos || []));
   const [audio, setAudio] = useState(() => getInitialDraft('audio', initialAudio));
   const [events, setEvents] = useState(() => getInitialDraft('events', initialEvents));
   const [gallery, setGallery] = useState(() => getInitialDraft('gallery', initialGallery));
@@ -59,7 +61,7 @@ export default function StudioApp({ onCloseStudio }) {
   const [sectionConfig, setSectionConfig] = useState(() => getInitialDraft('sectionConfig', initialSectionConfig || [
     { id: 'hero', name: 'Hero Banner', enabled: true },
     { id: 'about', name: 'About Artist', enabled: true },
-    { id: 'posts', name: 'Latest Posts', enabled: true },
+    { id: 'posts', name: 'Latest Posts & Videos', enabled: true },
     { id: 'music', name: 'Music Showcase', enabled: true },
     { id: 'events', name: 'Concert Schedule', enabled: true },
     { id: 'socials', name: 'Social Channels', enabled: true },
@@ -72,10 +74,10 @@ export default function StudioApp({ onCloseStudio }) {
   useEffect(() => {
     try {
       localStorage.setItem('ms_studio_draft', JSON.stringify({
-        hero, about, socials, posts, audio, events, gallery, testimonials, faqs, sectionConfig
+        hero, about, socials, posts, videos, audio, events, gallery, testimonials, faqs, sectionConfig
       }));
     } catch (e) {}
-  }, [hero, about, socials, posts, audio, events, gallery, testimonials, faqs, sectionConfig]);
+  }, [hero, about, socials, posts, videos, audio, events, gallery, testimonials, faqs, sectionConfig]);
 
   // UI status
   const [isDirty, setIsDirty] = useState(false);
@@ -121,6 +123,17 @@ export default function StudioApp({ onCloseStudio }) {
     songsBreakdown: {},
     concertsBreakdown: {},
     socialClicks: { facebook: 0, youtube: 0, instagram: 0, spotify: 0 }
+  });
+
+  // YouTube Videos & Media State
+  const [isSyncingYouTube, setIsSyncingYouTube] = useState(false);
+  const [newVideoInput, setNewVideoInput] = useState({
+    title: '',
+    url: '',
+    type: 'Video',
+    date: new Date().toISOString().split('T')[0],
+    views: '',
+    description: ''
   });
 
   const fetchGitConfig = async () => {
@@ -371,13 +384,79 @@ export default function StudioApp({ onCloseStudio }) {
     }
   };
 
+  // Sync YouTube videos & shorts directly from channel
+  const handleSyncYouTube = async () => {
+    setIsSyncingYouTube(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/sync-youtube`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.videos) {
+        setVideos(data.videos);
+        markDirty();
+        alert(`Successfully synced ${data.count} videos & shorts from YouTube channel @muralidharshenoykochi!`);
+      } else {
+        alert('YouTube sync notice: ' + (data.error || 'Failed to sync videos'));
+      }
+    } catch (err) {
+      alert('Error communicating with server: ' + err.message);
+    } finally {
+      setIsSyncingYouTube(false);
+    }
+  };
+
+  // Add custom video / short directly through app
+  const handleAddVideo = () => {
+    if (!newVideoInput.title.trim()) {
+      alert('Please enter a video title');
+      return;
+    }
+    let vidId = '';
+    const rawUrl = newVideoInput.url.trim();
+    if (rawUrl.includes('v=')) {
+      vidId = rawUrl.split('v=')[1].split('&')[0];
+    } else if (rawUrl.includes('youtu.be/')) {
+      vidId = rawUrl.split('youtu.be/')[1].split('?')[0];
+    } else if (rawUrl.includes('/shorts/')) {
+      vidId = rawUrl.split('/shorts/')[1].split('?')[0];
+    } else {
+      vidId = rawUrl;
+    }
+
+    const newEntry = {
+      id: `custom-yt-${Date.now()}`,
+      videoId: vidId,
+      title: newVideoInput.title.trim(),
+      type: newVideoInput.type || 'Video',
+      platform: 'YouTube',
+      date: newVideoInput.date || new Date().toISOString().split('T')[0],
+      views: newVideoInput.views ? `${newVideoInput.views} views` : 'New Release',
+      timeAgo: 'Recently Uploaded',
+      url: rawUrl.startsWith('http') ? rawUrl : (newVideoInput.type === 'Short' ? `https://www.youtube.com/shorts/${vidId}` : `https://www.youtube.com/watch?v=${vidId}`),
+      thumbnail: vidId ? `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg` : 'picSingingMic',
+      description: newVideoInput.description || 'Uploaded via MS Music Studio',
+      isCustom: true
+    };
+
+    const updated = [newEntry, ...videos].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    setVideos(updated);
+    markDirty();
+    setNewVideoInput({
+      title: '',
+      url: '',
+      type: 'Video',
+      date: new Date().toISOString().split('T')[0],
+      views: '',
+      description: ''
+    });
+  };
+
   // Save changes to backend disk files & browser session
   const handleSaveChanges = async () => {
     setSaveStatus('saving');
     // Save to browser localStorage draft immediately
     try {
       localStorage.setItem('ms_studio_draft', JSON.stringify({
-        hero, about, socials, posts, audio, events, gallery, testimonials, faqs, sectionConfig
+        hero, about, socials, posts, videos, audio, events, gallery, testimonials, faqs, sectionConfig
       }));
     } catch (e) {}
 
@@ -386,7 +465,7 @@ export default function StudioApp({ onCloseStudio }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          hero, about, socials, posts, audio, events, gallery, testimonials, faqs, sectionConfig
+          hero, about, socials, posts, videos, audio, events, gallery, testimonials, faqs, sectionConfig
         })
       });
 
@@ -1460,53 +1539,216 @@ export default function StudioApp({ onCloseStudio }) {
                 </div>
               )}
 
-              {/* 6. POSTS TAB */}
+              {/* 6. POSTS & YOUTUBE VIDEOS TAB */}
               {activeTab === 'posts' && (
-                <div className="space-y-6">
-                  <div className="border-b border-zinc-800 pb-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <Share2 className="w-5 h-5 text-amber-400" />
-                      Latest Social Media Posts
-                    </h2>
+                <div className="space-y-8">
+                  {/* YouTube Sync & Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-zinc-800 gap-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Share2 className="w-5 h-5 text-amber-400" />
+                        YouTube Videos, Shorts & Media Posts
+                      </h2>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Manage videos from @muralidharshenoykochi, add custom releases, and sync automatically. Displayed in sorted date order.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSyncYouTube}
+                      disabled={isSyncingYouTube}
+                      className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncingYouTube ? 'animate-spin' : ''}`} />
+                      <span>{isSyncingYouTube ? 'Syncing Channel...' : 'Sync from YouTube'}</span>
+                    </button>
                   </div>
 
-                  <div className="space-y-4">
-                    {posts.map((post, index) => (
-                      <div key={post.id || index} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <input
-                            type="text"
-                            placeholder="Title"
-                            value={post.title || ''}
-                            onChange={e => {
-                              setPosts(posts.map((p, i) => i === index ? { ...p, title: e.target.value } : p));
-                              markDirty();
-                            }}
-                            className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold outline-none"
-                          />
-                          <input
-                            type="text"
-                            placeholder="URL"
-                            value={post.url || ''}
-                            onChange={e => {
-                              setPosts(posts.map((p, i) => i === index ? { ...p, url: e.target.value } : p));
-                              markDirty();
-                            }}
-                            className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none"
-                          />
-                          <textarea
-                            rows={2}
-                            placeholder="Description"
-                            value={post.description || ''}
-                            onChange={e => {
-                              setPosts(posts.map((p, i) => i === index ? { ...p, description: e.target.value } : p));
-                              markDirty();
-                            }}
-                            className="md:col-span-2 bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none"
-                          />
-                        </div>
+                  {/* Add New Video / Short Card */}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4 shadow-xl">
+                    <div className="flex items-center gap-2 text-sm font-bold text-white">
+                      <Plus className="w-4 h-4 text-amber-400" />
+                      <span>Add New Video or YouTube Short</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="lg:col-span-2">
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Video Title</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Omkara Roopini - Chottanikara Amma"
+                          value={newVideoInput.title}
+                          onChange={e => setNewVideoInput({ ...newVideoInput, title: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 font-bold"
+                        />
                       </div>
-                    ))}
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Type</label>
+                        <select
+                          value={newVideoInput.type}
+                          onChange={e => setNewVideoInput({ ...newVideoInput, type: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 cursor-pointer"
+                        >
+                          <option value="Video">Full Video</option>
+                          <option value="Short">YouTube Short</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">YouTube URL or Video ID</label>
+                        <input
+                          type="text"
+                          placeholder="https://youtu.be/... or ID"
+                          value={newVideoInput.url}
+                          onChange={e => setNewVideoInput({ ...newVideoInput, url: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Release Date (for Date Order)</label>
+                        <input
+                          type="date"
+                          value={newVideoInput.date}
+                          onChange={e => setNewVideoInput({ ...newVideoInput, date: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Views Count / Badge (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 5.2K"
+                          value={newVideoInput.views}
+                          onChange={e => setNewVideoInput({ ...newVideoInput, views: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddVideo}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-extrabold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Video to Site</span>
+                    </button>
+                  </div>
+
+                  {/* List of Configured Videos */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>Configured Videos & Shorts</span>
+                        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/10 text-amber-400">
+                          {videos.length} items
+                        </span>
+                      </h3>
+                      <span className="text-[11px] font-mono text-zinc-400">
+                        Sorted date order: Newest &rarr; Oldest
+                      </span>
+                    </div>
+
+                    <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
+                      {videos.slice(0, 30).map((vid, idx) => (
+                        <div
+                          key={vid.id || vid.videoId || idx}
+                          className="bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl p-3 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <img
+                              src={vid.thumbnail}
+                              alt=""
+                              className="w-14 h-9 object-cover rounded-md bg-zinc-900 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-white truncate max-w-sm sm:max-w-md">
+                                {vid.title}
+                              </h4>
+                              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 mt-0.5">
+                                <span className={`px-1.5 py-0.2 rounded font-bold uppercase ${vid.type === 'Short' ? 'bg-rose-500/20 text-rose-300' : 'bg-red-500/20 text-red-300'}`}>
+                                  {vid.type || 'Video'}
+                                </span>
+                                <span>{vid.date || vid.timeAgo}</span>
+                                {vid.views && <span>• {vid.views}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <a
+                              href={vid.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white"
+                              title="Open on YouTube"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVideos(videos.filter((_, i) => i !== idx));
+                                markDirty();
+                              }}
+                              className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300"
+                              title="Remove Video"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Social Feeds (Instagram & Facebook) */}
+                  <div className="pt-4 border-t border-zinc-800 space-y-4">
+                    <h3 className="text-sm font-bold text-white">
+                      Other Social Media Posts (Instagram & Facebook)
+                    </h3>
+                    <div className="space-y-3">
+                      {posts.filter(p => p.platform?.toLowerCase() !== 'youtube').map((post, index) => (
+                        <div key={post.id || index} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              placeholder="Title"
+                              value={post.title || ''}
+                              onChange={e => {
+                                setPosts(posts.map((p, i) => i === index ? { ...p, title: e.target.value } : p));
+                                markDirty();
+                              }}
+                              className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold outline-none"
+                            />
+                            <input
+                              type="text"
+                              placeholder="URL"
+                              value={post.url || ''}
+                              onChange={e => {
+                                setPosts(posts.map((p, i) => i === index ? { ...p, url: e.target.value } : p));
+                                markDirty();
+                              }}
+                              className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none"
+                            />
+                            <textarea
+                              rows={2}
+                              placeholder="Description"
+                              value={post.description || ''}
+                              onChange={e => {
+                                setPosts(posts.map((p, i) => i === index ? { ...p, description: e.target.value } : p));
+                                markDirty();
+                              }}
+                              className="md:col-span-2 bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-white outline-none"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

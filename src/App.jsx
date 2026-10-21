@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import StudioApp from './studio/StudioApp';
 import MainSiteView from './components/MainSiteView';
+import IntroLoader from './components/IntroLoader';
 
 export default function App() {
   const isElectron = typeof window !== 'undefined' && (
@@ -18,12 +19,18 @@ export default function App() {
     (typeof window !== 'undefined' && window.location.search.includes('mode=studio')) || isElectron
   );
 
+  const [introFinished, setIntroFinished] = useState(false);
+
   if (isStudioOpen) {
     return <StudioApp onCloseStudio={() => setIsStudioOpen(false)} />;
   }
 
   return (
     <div className="relative min-h-screen bg-black">
+      {!introFinished && (
+        <IntroLoader onComplete={() => setIntroFinished(true)} />
+      )}
+
       <MainSiteView />
 
       {/* Floating Studio Button for Local Desktop editing */}

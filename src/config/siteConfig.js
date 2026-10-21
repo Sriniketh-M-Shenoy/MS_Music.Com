@@ -24,7 +24,8 @@ import {
   eventsContent,
   galleryContent,
   testimonialsContent,
-  faqsContent
+  faqsContent,
+  videosContent
 } from '../content';
 
 export const siteConfig = {
@@ -39,8 +40,9 @@ export const siteConfig = {
   // 2. SOCIAL MEDIA LINKS (from src/content/socials.js)
   socials: socialsContent,
 
-  // 3. ACTUAL LATEST POSTS (from src/content/posts.js)
+  // 3. ACTUAL LATEST POSTS & YOUTUBE VIDEOS (from src/content/posts.js & src/content/videos.js)
   latestPosts: latestPostsContent,
+  videos: videosContent,
 
   // 4. GOOGLE FORM & BOOKING ENQUIRY CONFIGURATION
   googleForm: {

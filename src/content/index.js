@@ -8,6 +8,7 @@ import { galleryContent } from './gallery';
 import { testimonialsContent } from './testimonials';
 import { faqsContent } from './faqs';
 import { sectionConfig } from './sectionConfig';
+import { videosContent } from './videos';
 
 export {
   heroContent,
@@ -19,5 +20,6 @@ export {
   galleryContent,
   testimonialsContent,
   faqsContent,
-  sectionConfig
+  sectionConfig,
+  videosContent
 };
