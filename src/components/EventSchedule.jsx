@@ -31,20 +31,22 @@ export default function EventSchedule({ onOpenBooking }) {
         </motion.div>
 
         {events.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((evt, idx) => (
-              <motion.div
-                key={evt.id || idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                whileHover={{ y: -6 }}
-                className="apple-bento p-6 border border-white/10 flex flex-col justify-between space-y-6 group hover:border-amber-400/40 transition-all"
-              >
-                <div className="space-y-4">
+          <div className="space-y-4">
+            {events
+              .slice()
+              .sort((a, b) => new Date(a.date) - new Date(b.date))
+              .map((evt, idx) => (
+                <motion.div
+                  key={evt.id || idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                  whileHover={{ y: -2 }}
+                  className="flex flex-col p-4 border-b border-white/10 group hover:bg-white/5 transition-all"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20 font-semibold">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
                       {evt.formattedDate || evt.date}
                     </span>
                     {evt.category && (
@@ -54,38 +56,50 @@ export default function EventSchedule({ onOpenBooking }) {
                       </span>
                     )}
                   </div>
-
-                  <h3 className="font-sans text-xl font-bold text-white group-hover:text-amber-300 transition-colors leading-snug">
-                    {evt.title}
-                  </h3>
-
-                  <div className="space-y-1.5 text-xs text-gray-300">
+                  <h3 className="font-sans text-lg font-bold text-white mt-1">{evt.title}</h3>
+                  <div className="text-xs text-gray-300 mt-1 space-y-1">
                     {evt.time && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-amber-400" />
                         <span>{evt.time}</span>
                       </div>
                     )}
                     {(evt.venue || evt.city) && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-amber-400" />
                         <span>{[evt.venue, evt.city].filter(Boolean).join(', ')}</span>
                       </div>
                     )}
                   </div>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={onOpenBooking}
-                  className="w-full bg-white/10 hover:bg-white text-white hover:text-black font-extrabold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all border border-white/10"
-                >
-                  <span>Book / Enquire</span>
-                  <ChevronRight className="w-4 h-4" />
-                </motion.button>
-              </motion.div>
-            ))}
+                  <div className="mt-2 flex items-center space-x-2 text-xs">
+                    <span className="font-mono uppercase text-amber-300">{evt.ticketed ? 'Ticketed' : 'Free'}</span>
+                  </div>
+                  {evt.ticketed ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={async () => {
+                        await fetch(`https://api.api-ninjas.com/v1/counter?id=${encodeURIComponent(evt.title)}_book_ticket_counter&value=1`, {
+                          headers: { 'X-Api-Key': 'd43hYDZXlvx2kymEjDOk8hxdmbdDCtqSZEQZ04h' },
+                        });
+                        window.open(evt.ticketUrl, '_blank');
+                      }}
+                      className="mt-2 w-max bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-3 rounded"
+                    >
+                      Book Ticket
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={onOpenBooking}
+                      className="mt-2 w-max bg-white/10 hover:bg-white text-white hover:text-black font-semibold py-1 px-3 rounded"
+                    >
+                      Enquire
+                    </motion.button>
+                  )}
+                </motion.div>
+              ))}
           </div>
         ) : (
           /* Coming Soon Bento Box */

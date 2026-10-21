@@ -10,10 +10,15 @@
     "app": "electron .",
     "studio": "npm run app",
     "build": "vite build",
-    "build:mac": "npm run build && electron-builder --mac dir && rm -rf \"./MS Music Studio.app\" && cp -R \"release/mac-arm64/MS Music Studio.app\" ./ && xattr -cr \"./MS Music Studio.app\"",
+    "build:mac": "npm run build && electron-builder --mac dmg && rm -rf \"./MS Music Studio.app\" && cp -R \"release/mac-arm64/MS Music Studio.app\" ./ && xattr -cr \"./MS Music Studio.app\"",
+    "build:win": "npm run build && electron-builder --win portable",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "install:mac": "npm ci && npm run build:mac && mkdir -p install && cp release/*.dmg install/ && cp -R \"release/mac-arm64/MS Music Studio.app\" install/ && xattr -cr install/MS\\ Music\\ Studio.app",
+    "install:win": "npm ci && npm run build:win && mkdir install && copy release\\\\win-unpacked\\\\*.* install\\\\",
+    "install:all": "npm run install:mac && npm run install:win",
+    "clean-concerts": "node scripts/clean-past-concerts.js"
   },
   "build": {
     "appId": "com.msmusic.studio",
@@ -36,7 +41,13 @@
       "category": "public.app-category.music",
       "icon": "build/icon.icns",
       "target": [
-        "dir"
+        "dir",
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "portable"
       ]
     }
   },
