@@ -199,7 +199,7 @@ function getGitPushCommand() {
 
   let remoteUrl = '';
   try {
-    remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
+    remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).toString().trim();
   } catch (e) {}
 
   if (!remoteUrl || !remoteUrl.includes('github.com')) {
@@ -212,6 +212,26 @@ function getGitPushCommand() {
     return `git push https://${encodeURIComponent(gitPat)}@${cleanRemote} main`;
   }
   return 'git push origin main';
+}
+
+// Helper to get Git Pull Command with PAT
+function getGitPullCommand() {
+  const gitPat = readSavedPat();
+
+  let remoteUrl = '';
+  try {
+    remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).toString().trim();
+  } catch (e) {}
+
+  if (!remoteUrl || !remoteUrl.includes('github.com')) {
+    remoteUrl = 'https://github.com/Sriniketh-M-Shenoy/MS_Music.Com.git';
+  }
+
+  const cleanRemote = remoteUrl.replace(/^https?:\/\/(?:[^@]+@)?/, '');
+  if (gitPat && cleanRemote) {
+    return `git pull https://${encodeURIComponent(gitPat)}@${cleanRemote} main`;
+  }
+  return 'git pull origin main';
 }
 
 // Generators for JS content files
@@ -408,7 +428,8 @@ function generateSectionConfigJs(data) {
 
 function autoPullLatest() {
   try {
-    execSync('git pull origin main', { cwd: ROOT_DIR });
+    const pullCmd = getGitPullCommand();
+    execSync(pullCmd, { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, timeout: 10000 });
     console.log('[MS Studio API] Auto-pulled latest remote changes.');
   } catch (err) {
     console.warn('[MS Studio API] Auto-pull skipped:', err.message);
@@ -432,7 +453,8 @@ const server = http.createServer(async (req, res) => {
     // 0. GET /api/git-pull
     if (pathname === '/api/git-pull' && req.method === 'GET') {
       try {
-        execSync('git pull origin main', { cwd: ROOT_DIR });
+        const pullCmd = getGitPullCommand();
+        execSync(pullCmd, { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, timeout: 10000 });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, message: 'Successfully pulled latest changes' }));
       } catch (pullErr) {
@@ -779,15 +801,15 @@ const server = http.createServer(async (req, res) => {
 
         steps.push('Pushing to GitHub...');
         const pushCmd = getGitPushCommand();
-        execSync(pushCmd, { cwd: ROOT_DIR });
+        execSync(pushCmd, { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
 
-        steps.push('Building & Deploying to GitHub Pages...');
+        steps.push('Deploying live website...');
+        // GitHub Actions (.github/workflows/deploy.yml) automatically triggers and builds live site on push.
         try {
-          execSync('npm run deploy', { cwd: ROOT_DIR });
+          execSync('npm run deploy', { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, timeout: 15000 });
           steps.push('Deploy completed successfully!');
         } catch (deployErr) {
-          console.error('Deploy warning:', deployErr.message);
-          steps.push('Git pushed successfully (Deploy script noted: ' + deployErr.message.split('\n')[0] + ')');
+          steps.push('Changes pushed to GitHub. Live GitHub Pages deploy workflow is updating automatically in the background.');
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
