@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, ChevronRight, MapPin, Clock, Tag, Ticket, ExternalLink } from 'lucide-react';
+import { Calendar, ChevronRight, MapPin, Clock, Tag, Ticket, ExternalLink, Star } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
-import { incrementCounter, sanitizeCounterId } from '../utils/metrics';
+import { incrementCounter, getCounterValue, sanitizeCounterId } from '../utils/metrics';
 
 export default function EventSchedule({ onOpenBooking }) {
   const siteConfig = useSiteConfig();
@@ -11,8 +11,31 @@ export default function EventSchedule({ onOpenBooking }) {
   // Sort concerts ascending: earliest date first, later dates after
   const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  // Local state for tracking concerts user is interested in
+  const [interestedMap, setInterestedMap] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('ms_interested_events') || '{}');
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const [countsMap, setCountsMap] = useState({});
+
+  useEffect(() => {
+    // Fetch initial counts for free concert interested counters
+    sortedEvents.forEach(async (evt) => {
+      if (!evt.ticketed) {
+        const counterName = `${sanitizeCounterId(evt.title)}_interested_counter`;
+        const val = await getCounterValue(counterName);
+        if (typeof val === 'number') {
+          setCountsMap(prev => ({ ...prev, [evt.title]: val }));
+        }
+      }
+    });
+  }, [events]);
+
   const handleBookTicket = async (evt) => {
-    // Increment concert-specific counter
     const counterName = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
     incrementCounter(counterName);
     incrementCounter('total_book_ticket_clicks');
@@ -24,9 +47,26 @@ export default function EventSchedule({ onOpenBooking }) {
     }
   };
 
-  const handleEnquire = () => {
-    incrementCounter('concert_enquiry_clicks');
-    if (onOpenBooking) onOpenBooking();
+  const handleToggleInterested = async (evt) => {
+    const key = evt.id || evt.title;
+    const isCurrentlyInterested = Boolean(interestedMap[key]);
+
+    if (!isCurrentlyInterested) {
+      const counterName = `${sanitizeCounterId(evt.title)}_interested_counter`;
+      incrementCounter(counterName);
+      incrementCounter('total_interested_clicks');
+
+      const nextMap = { ...interestedMap, [key]: true };
+      setInterestedMap(nextMap);
+      try {
+        localStorage.setItem('ms_interested_events', JSON.stringify(nextMap));
+      } catch (e) {}
+
+      setCountsMap(prev => ({
+        ...prev,
+        [evt.title]: (prev[evt.title] || 0) + 1
+      }));
+    }
   };
 
   return (
@@ -56,6 +96,10 @@ export default function EventSchedule({ onOpenBooking }) {
           <div className="space-y-4">
             {sortedEvents.map((evt, idx) => {
               const isTicketed = Boolean(evt.ticketed);
+              const eventKey = evt.id || evt.title;
+              const isInterested = Boolean(interestedMap[eventKey]);
+              const interestedCount = countsMap[evt.title] || 0;
+
               return (
                 <motion.div
                   key={evt.id || idx}
@@ -133,7 +177,7 @@ export default function EventSchedule({ onOpenBooking }) {
                     </div>
                   </div>
 
-                  {/* Right: Action Button */}
+                  {/* Right: Action Button (Book Ticket vs Interested) */}
                   <div className="shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-white/10 flex items-center justify-end">
                     {isTicketed ? (
                       <motion.button
@@ -150,11 +194,21 @@ export default function EventSchedule({ onOpenBooking }) {
                       <motion.button
                         whileHover={{ scale: 1.04 }}
                         whileTap={{ scale: 0.96 }}
-                        onClick={handleEnquire}
-                        className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white text-white hover:text-black font-bold text-xs sm:text-sm py-2.5 px-5 rounded-xl border border-white/20 transition-all cursor-pointer"
+                        onClick={() => handleToggleInterested(evt)}
+                        className={`w-full md:w-auto inline-flex items-center justify-center gap-2 text-xs sm:text-sm py-2.5 px-4 rounded-xl border transition-all cursor-pointer ${
+                          isInterested
+                            ? 'bg-amber-400/15 border-amber-400/50 text-amber-300 shadow-md font-extrabold'
+                            : 'bg-white/5 hover:bg-white/10 border-white/15 text-gray-300 hover:text-white font-semibold'
+                        }`}
+                        title="Click to register your interest for this concert"
                       >
-                        <span>Enquire</span>
-                        <ChevronRight className="w-4 h-4" />
+                        <Star className={`w-4 h-4 transition-transform ${isInterested ? 'fill-amber-400 text-amber-400 scale-110' : 'text-gray-400 group-hover:text-amber-400'}`} />
+                        <span>{isInterested ? 'Interested' : "I'm Interested"}</span>
+                        {interestedCount > 0 && (
+                          <span className="text-[11px] font-mono px-1.5 py-0.2 rounded-full bg-white/10 text-white/90">
+                            {interestedCount}
+                          </span>
+                        )}
                       </motion.button>
                     )}
                   </div>

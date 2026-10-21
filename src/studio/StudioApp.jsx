@@ -191,6 +191,7 @@ export default function StudioApp({ onCloseStudio }) {
         enquiryClicks,
         enquirySubmits,
         ticketClicks,
+        interestedClicks,
         fbClicks,
         ytClicks,
         instaClicks,
@@ -201,6 +202,7 @@ export default function StudioApp({ onCloseStudio }) {
         getCounterValue('enquiry_form_clicks'),
         getCounterValue('enquiry_form_submits'),
         getCounterValue('total_book_ticket_clicks'),
+        getCounterValue('total_interested_clicks'),
         getCounterValue('social_clicks_facebook'),
         getCounterValue('social_clicks_youtube'),
         getCounterValue('social_clicks_instagram'),
@@ -215,7 +217,9 @@ export default function StudioApp({ onCloseStudio }) {
 
       const concertsBreakdown = {};
       await Promise.all((events || []).map(async (evt) => {
-        const cId = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
+        const cId = evt.ticketed
+          ? `${sanitizeCounterId(evt.title)}_book_ticket_counter`
+          : `${sanitizeCounterId(evt.title)}_interested_counter`;
         concertsBreakdown[evt.title] = await getCounterValue(cId);
       }));
 
@@ -225,6 +229,7 @@ export default function StudioApp({ onCloseStudio }) {
         enquiryClicks: enquiryClicks || 0,
         enquirySubmits: enquirySubmits || 0,
         ticketClicks: ticketClicks || 0,
+        interestedClicks: interestedClicks || 0,
         songsBreakdown,
         concertsBreakdown,
         socialClicks: {
@@ -1352,7 +1357,7 @@ export default function StudioApp({ onCloseStudio }) {
                               </div>
                             </div>
 
-                            {evt.ticketed && (
+                            {evt.ticketed ? (
                               <div className="space-y-1.5 bg-amber-500/5 p-3 rounded-xl border border-amber-500/20">
                                 <label className="text-xs text-amber-300 font-bold flex items-center gap-1.5">
                                   <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
@@ -1374,6 +1379,22 @@ export default function StudioApp({ onCloseStudio }) {
                                   <span>Registered Click Counter:</span>
                                   <span className="bg-zinc-900 text-amber-400 px-2 py-0.5 rounded border border-zinc-800">
                                     {counterId}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/20 text-[11px] text-zinc-300 space-y-1">
+                                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                                  <Star className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
+                                  Free Concert Engagement
+                                </span>
+                                <p className="text-zinc-400 text-[11px]">
+                                  Visitors can click the &quot;Interested&quot; button on your website to show interest.
+                                </p>
+                                <div className="text-[11px] text-zinc-400 flex items-center gap-2 pt-1 font-mono">
+                                  <span>Registered Interest Counter:</span>
+                                  <span className="bg-zinc-900 text-amber-400 px-2 py-0.5 rounded border border-zinc-800">
+                                    {sanitizeCounterId(evt.title)}_interested_counter
                                   </span>
                                 </div>
                               </div>
@@ -2181,7 +2202,9 @@ export default function StudioApp({ onCloseStudio }) {
                     <div className="space-y-3">
                       {events.map((evt, i) => {
                         const count = metricsData.concertsBreakdown[evt.title] || 0;
-                        const counterId = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
+                        const counterId = evt.ticketed 
+                          ? `${sanitizeCounterId(evt.title)}_book_ticket_counter`
+                          : `${sanitizeCounterId(evt.title)}_interested_counter`;
 
                         return (
                           <div key={evt.id || i} className="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800/60 flex flex-wrap items-center justify-between gap-3">
@@ -2189,7 +2212,7 @@ export default function StudioApp({ onCloseStudio }) {
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-white">{evt.title}</span>
                                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                                  evt.ticketed ? 'bg-amber-500/20 text-amber-300' : 'bg-zinc-800 text-zinc-400'
+                                  evt.ticketed ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
                                 }`}>
                                   {evt.ticketed ? 'Ticketed' : 'Free Entry'}
                                 </span>
@@ -2203,8 +2226,10 @@ export default function StudioApp({ onCloseStudio }) {
                             </div>
 
                             <div className="text-right">
-                              <span className="text-base font-bold text-rose-400 font-mono">{count} clicks</span>
-                              {evt.ticketUrl && (
+                              <span className={`text-base font-bold font-mono ${evt.ticketed ? 'text-rose-400' : 'text-amber-400'}`}>
+                                {count} {evt.ticketed ? 'ticket clicks' : 'interested'}
+                              </span>
+                              {evt.ticketed && evt.ticketUrl && (
                                 <a
                                   href={evt.ticketUrl}
                                   target="_blank"

@@ -27,11 +27,22 @@ if (ROOT_DIR.includes('app.asar')) {
 
 const PORT = process.env.PORT || 3001;
 
-// Ensure upload directories exist
+// Ensure upload directories and user data directories exist
+const USER_DATA_DIR = process.env.APPDATA || (
+  process.platform === 'darwin' 
+    ? path.join(process.env.HOME, 'Library', 'Application Support', 'MS Music Studio') 
+    : path.join(process.env.HOME, '.config', 'MS Music Studio')
+);
+
+try {
+  if (!fs.existsSync(USER_DATA_DIR)) {
+    fs.mkdirSync(USER_DATA_DIR, { recursive: true });
+  }
+} catch (e) {}
+
 let UPLOADS_DIR = path.join(ROOT_DIR, 'public', 'uploads');
 if (ROOT_DIR.includes('app.asar')) {
-  const userDataDir = process.env.APPDATA || (process.platform === 'darwin' ? path.join(process.env.HOME, 'Library', 'Application Support', 'MS Music Studio') : path.join(process.env.HOME, '.config', 'MS Music Studio'));
-  UPLOADS_DIR = path.join(userDataDir, 'uploads');
+  UPLOADS_DIR = path.join(USER_DATA_DIR, 'uploads');
 }
 
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -42,7 +53,49 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 // Content directory
 const CONTENT_DIR = path.join(ROOT_DIR, 'src', 'content');
-const GIT_CONFIG_PATH = path.join(__dirname, 'git-config.json');
+
+// Helper to get safe, writable path for git-config.json (avoids read-only app.asar ENOTDIR error)
+function getGitConfigPath() {
+  if (ROOT_DIR.includes('app.asar') || __dirname.includes('app.asar')) {
+    return path.join(USER_DATA_DIR, 'git-config.json');
+  }
+  return path.join(ROOT_DIR, 'studio', 'git-config.json');
+}
+
+// Helper to read saved PAT from persistent locations
+function readSavedPat() {
+  const pathsToCheck = [
+    path.join(USER_DATA_DIR, 'git-config.json'),
+    path.join(ROOT_DIR, 'studio', 'git-config.json')
+  ];
+  for (const p of pathsToCheck) {
+    try {
+      if (fs.existsSync(p) && !p.includes('app.asar')) {
+        const raw = fs.readFileSync(p, 'utf8');
+        const cfg = JSON.parse(raw);
+        if (cfg && cfg.githubPat) return cfg.githubPat.trim();
+      }
+    } catch (e) {}
+  }
+  return '';
+}
+
+// Helper to save PAT safely to writable directory
+function savePat(pat) {
+  const targetPath = getGitConfigPath();
+  const dir = path.dirname(targetPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(targetPath, JSON.stringify({ githubPat: pat, updatedAt: new Date().toISOString() }, null, 2));
+
+  // Mirror to project root studio/git-config.json if running with accessible local workspace
+  if (!ROOT_DIR.includes('app.asar') && fs.existsSync(path.join(ROOT_DIR, 'studio'))) {
+    try {
+      fs.writeFileSync(path.join(ROOT_DIR, 'studio', 'git-config.json'), JSON.stringify({ githubPat: pat, updatedAt: new Date().toISOString() }, null, 2));
+    } catch (e) {}
+  }
+}
 
 // Helper to set CORS headers
 function setCorsHeaders(res) {
@@ -133,13 +186,7 @@ function parseMultipartForm(req) {
 
 // Helper to get Git Push Command with PAT
 function getGitPushCommand() {
-  let gitPat = '';
-  try {
-    if (fs.existsSync(GIT_CONFIG_PATH)) {
-      const cfg = JSON.parse(fs.readFileSync(GIT_CONFIG_PATH, 'utf8'));
-      gitPat = cfg.githubPat || '';
-    }
-  } catch (e) {}
+  const gitPat = readSavedPat();
 
   let remoteUrl = '';
   try {
@@ -436,14 +483,7 @@ const server = http.createServer(async (req, res) => {
 
     // 3. GET & POST /api/git-config (PAT & Credentials Management)
     if (pathname === '/api/git-config' && req.method === 'GET') {
-      let githubPat = '';
-      try {
-        if (fs.existsSync(GIT_CONFIG_PATH)) {
-          const cfg = JSON.parse(fs.readFileSync(GIT_CONFIG_PATH, 'utf8'));
-          githubPat = cfg.githubPat || '';
-        }
-      } catch (e) {}
-
+      const githubPat = readSavedPat();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         hasPat: Boolean(githubPat),
@@ -457,10 +497,11 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonBody(req);
       const gitPat = (body.githubPat || '').trim();
       try {
-        fs.writeFileSync(GIT_CONFIG_PATH, JSON.stringify({ githubPat: gitPat, updatedAt: new Date().toISOString() }, null, 2));
+        savePat(gitPat);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, message: 'GitHub PAT credentials saved successfully' }));
       } catch (e) {
+        console.error('Error saving git config:', e);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: e.message }));
       }
@@ -698,13 +739,10 @@ const server = http.createServer(async (req, res) => {
       let gitPat = (body.githubPat || '').trim();
       if (gitPat) {
         try {
-          fs.writeFileSync(GIT_CONFIG_PATH, JSON.stringify({ githubPat: gitPat, updatedAt: new Date().toISOString() }, null, 2));
+          savePat(gitPat);
         } catch (e) {}
-      } else if (fs.existsSync(GIT_CONFIG_PATH)) {
-        try {
-          const cfg = JSON.parse(fs.readFileSync(GIT_CONFIG_PATH, 'utf8'));
-          gitPat = (cfg.githubPat || '').trim();
-        } catch (e) {}
+      } else {
+        gitPat = readSavedPat();
       }
 
       if (!gitPat) {
