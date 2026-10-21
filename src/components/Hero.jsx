@@ -30,7 +30,7 @@ export default function Hero({ onOpenBooking }) {
   const nameWords = (siteConfig.artist.name || "Muralidhar Shenoy").split(' ');
 
   return (
-    <section className="relative min-h-[85vh] sm:min-h-[88vh] flex flex-col justify-end pt-28 sm:pt-32 pb-16 sm:pb-20 overflow-hidden bg-black">
+    <section id="hero" className="hero-section relative min-h-[85vh] sm:min-h-[88vh] flex flex-col justify-end pt-28 sm:pt-32 pb-16 sm:pb-20 overflow-hidden bg-black">
       
       {/* Background Artist Image */}
       <div className="absolute inset-0 z-0">
@@ -65,7 +65,7 @@ export default function Hero({ onOpenBooking }) {
         {/* Artist Name Header */}
         <motion.h1
           variants={itemVariants}
-          className="font-sans text-4xl xs:text-5xl sm:text-7xl lg:text-9xl font-extrabold tracking-tight text-white mb-3 leading-[1.05]"
+          className="hero-main-title font-sans text-4xl xs:text-5xl sm:text-7xl lg:text-9xl font-extrabold tracking-tight text-white mb-3 leading-[1.05]"
         >
           {nameWords.map((word, i) => (
             <React.Fragment key={i}>
@@ -78,7 +78,7 @@ export default function Hero({ onOpenBooking }) {
         {/* Title Tagline */}
         <motion.p
           variants={itemVariants}
-          className="text-base sm:text-2xl lg:text-3xl font-medium text-gray-200 mb-8 sm:mb-10 tracking-tight max-w-4xl leading-snug"
+          className="hero-tagline text-base sm:text-2xl lg:text-3xl font-medium text-gray-200 mb-8 sm:mb-10 tracking-tight max-w-4xl leading-snug"
         >
           {siteConfig.artist.tagline || siteConfig.artist.title}
         </motion.p>
@@ -92,7 +92,7 @@ export default function Hero({ onOpenBooking }) {
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={onOpenBooking}
-            className="w-full sm:w-auto bg-white hover:bg-gray-200 text-black font-extrabold px-7 py-3.5 sm:px-9 sm:py-4 rounded-full text-sm sm:text-base transition-all shadow-2xl flex items-center justify-center gap-2"
+            className="hero-cta-btn w-full sm:w-auto bg-white hover:bg-gray-200 text-black font-extrabold px-7 py-3.5 sm:px-9 sm:py-4 rounded-full text-sm sm:text-base transition-all shadow-2xl flex items-center justify-center gap-2"
           >
             <span>{siteConfig.artist.bookingButtonText || "Booking Enquiry"}</span>
             <ChevronRight className="w-5 h-5 text-black" />

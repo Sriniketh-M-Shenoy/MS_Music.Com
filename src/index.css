@@ -314,3 +314,50 @@ body.light-mode,
 .light-mode a.bg-white * {
   color: #ffffff !important;
 }
+
+/* HERO SECTION OVERRIDES:
+   Covered by the artist hero picture with dark gradient overlays.
+   The main title (artist name), tagline, and CTA button must stay crisp white/high-contrast. */
+.light-mode section.hero-section,
+.light-mode section#hero,
+.light-mode #hero,
+.light-mode .hero-section {
+  background-color: #000000 !important;
+}
+
+.light-mode .hero-section h1,
+.light-mode .hero-section .hero-main-title,
+.light-mode #hero h1,
+.light-mode #hero .hero-main-title,
+.light-mode #hero .text-white,
+.light-mode .hero-section .text-white,
+.light-mode .hero-main-title,
+.light-mode h1.hero-main-title {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.light-mode .hero-section p,
+.light-mode .hero-section .hero-tagline,
+.light-mode #hero p,
+.light-mode #hero .hero-tagline,
+.light-mode .hero-tagline,
+.light-mode p.hero-tagline {
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+}
+
+.light-mode .hero-section button.hero-cta-btn,
+.light-mode #hero button.hero-cta-btn,
+.light-mode button.hero-cta-btn,
+.light-mode button.hero-cta-btn:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.light-mode .hero-section button.hero-cta-btn *,
+.light-mode #hero button.hero-cta-btn *,
+.light-mode button.hero-cta-btn * {
+  color: #000000 !important;
+}
+
