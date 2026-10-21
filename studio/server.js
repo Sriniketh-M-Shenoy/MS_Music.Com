@@ -722,6 +722,9 @@ const server = http.createServer(async (req, res) => {
         steps.push('Pushing to GitHub...');
         const pushCmd = getGitPushCommand();
         execSync(pushCmd, { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+        try {
+          execSync('git fetch origin main', { cwd: ROOT_DIR, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+        } catch (fErr) {}
 
         steps.push('Deploying live website...');
         try {
