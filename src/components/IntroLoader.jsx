@@ -6,14 +6,14 @@ export default function IntroLoader({ onComplete }) {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    // 2.6s matches the 1.3x accelerated GIF duration perfectly
+    // 3.3s matches the 1.3x accelerated new signature duration perfectly
     const timer = setTimeout(() => {
       setIsExiting(true);
-    }, 2600);
+    }, 3300);
 
     const completeTimer = setTimeout(() => {
       if (onComplete) onComplete();
-    }, 3300);
+    }, 4000);
 
     return () => {
       clearTimeout(timer);
