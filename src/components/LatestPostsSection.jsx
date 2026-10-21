@@ -165,10 +165,15 @@ export default function LatestPostsSection() {
                           <Youtube className="w-3.5 h-3.5" />
                           {isShort ? 'Short' : 'Video'}
                         </span>
+                      ) : item.platform?.toLowerCase() === 'instagram' ? (
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white border border-pink-400/40 shadow-lg">
+                          <Instagram className="w-3.5 h-3.5" />
+                          <span>Instagram</span>
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-600/90 text-white border border-blue-500/40 shadow-lg">
                           <Facebook className="w-3.5 h-3.5" />
-                          {item.platform}
+                          <span>Facebook</span>
                         </span>
                       )}
                     </div>
