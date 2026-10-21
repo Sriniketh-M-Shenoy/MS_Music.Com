@@ -14,13 +14,22 @@ if (ROOT_DIR.includes('app.asar')) {
   const asarIndex = ROOT_DIR.indexOf('.app/Contents/Resources/app.asar');
   if (asarIndex !== -1) {
     const asarPath = ROOT_DIR.substring(0, asarIndex + '.app/Contents/Resources/app.asar'.length);
-    const parentDir = path.resolve(ROOT_DIR.substring(0, asarIndex + 4), '..');
-
-    if (fs.existsSync(path.join(parentDir, 'package.json'))) {
-      ROOT_DIR = parentDir;
-    } else if (fs.existsSync(path.join(process.cwd(), 'package.json'))) {
-      ROOT_DIR = process.cwd();
-    } else {
+    const appDir = ROOT_DIR.substring(0, asarIndex + 4);
+    const candidates = [
+      path.resolve(appDir, '..'),
+      path.resolve(appDir, '..', '..'),
+      process.cwd(),
+      '/Users/muralidharshenoy/Desktop/My_Website/MS_Music.Com'
+    ];
+    let found = false;
+    for (const cand of candidates) {
+      if (cand && fs.existsSync(path.join(cand, 'package.json'))) {
+        ROOT_DIR = cand;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       ROOT_DIR = asarPath;
     }
   }

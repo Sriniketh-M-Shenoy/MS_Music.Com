@@ -30,7 +30,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           if [[ -n $(git status --porcelain src/content/events.js) ]]; then
             git add src/content/events.js
-            git commit -m "Auto: Pruned past concerts from schedule [skip ci]"
+            git commit -m "Auto: Pruned past concerts from schedule"
             git push
           else
             echo "No past concerts to clean."

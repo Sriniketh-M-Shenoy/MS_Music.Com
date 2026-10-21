@@ -11,13 +11,22 @@ if (ROOT_DIR.includes('app.asar')) {
   const asarIndex = ROOT_DIR.indexOf('.app/Contents/Resources/app.asar');
   if (asarIndex !== -1) {
     ASAR_PATH = ROOT_DIR.substring(0, asarIndex + '.app/Contents/Resources/app.asar'.length);
-    const parentDir = path.resolve(ROOT_DIR.substring(0, asarIndex + 4), '..');
-
-    if (fs.existsSync(path.join(parentDir, 'src', 'content')) && fs.existsSync(path.join(parentDir, 'package.json'))) {
-      ROOT_DIR = parentDir;
-    } else if (fs.existsSync(path.join(process.cwd(), 'src', 'content')) && fs.existsSync(path.join(process.cwd(), 'package.json'))) {
-      ROOT_DIR = process.cwd();
-    } else {
+    const appDir = ROOT_DIR.substring(0, asarIndex + 4);
+    const candidates = [
+      path.resolve(appDir, '..'), // e.g. root dir if app is directly in project root
+      path.resolve(appDir, '..', '..'), // e.g. root dir if app is in install/
+      process.cwd(),
+      '/Users/muralidharshenoy/Desktop/My_Website/MS_Music.Com'
+    ];
+    let found = false;
+    for (const cand of candidates) {
+      if (cand && fs.existsSync(path.join(cand, 'src', 'content')) && fs.existsSync(path.join(cand, 'package.json'))) {
+        ROOT_DIR = cand;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       ROOT_DIR = ASAR_PATH;
     }
   } else {
@@ -193,9 +202,14 @@ function getGitPushCommand() {
     remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
   } catch (e) {}
 
-  if (gitPat && remoteUrl.startsWith('https://')) {
-    const urlWithoutProto = remoteUrl.replace(/^https:\/\/[^@]*@?/, '');
-    return `git push https://${encodeURIComponent(gitPat)}@${urlWithoutProto} main`;
+  if (!remoteUrl || !remoteUrl.includes('github.com')) {
+    remoteUrl = 'https://github.com/Sriniketh-M-Shenoy/MS_Music.Com.git';
+  }
+
+  // Strip protocol and any existing embedded auth credentials safely
+  const cleanRemote = remoteUrl.replace(/^https?:\/\/(?:[^@]+@)?/, '');
+  if (gitPat && cleanRemote) {
+    return `git push https://${encodeURIComponent(gitPat)}@${cleanRemote} main`;
   }
   return 'git push origin main';
 }

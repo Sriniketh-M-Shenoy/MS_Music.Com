@@ -12,13 +12,22 @@ if (ROOT_DIR.includes('app.asar')) {
   const asarIndex = ROOT_DIR.indexOf('.app/Contents/Resources/app.asar');
   if (asarIndex !== -1) {
     ASAR_PATH = ROOT_DIR.substring(0, asarIndex + '.app/Contents/Resources/app.asar'.length);
-    const parentDir = path.resolve(ROOT_DIR.substring(0, asarIndex + 4), '..');
-
-    if (fs.existsSync(path.join(parentDir, 'src', 'content')) && fs.existsSync(path.join(parentDir, 'package.json'))) {
-      ROOT_DIR = parentDir;
-    } else if (fs.existsSync(path.join(process.cwd(), 'src', 'content')) && fs.existsSync(path.join(process.cwd(), 'package.json'))) {
-      ROOT_DIR = process.cwd();
-    } else {
+    const appDir = ROOT_DIR.substring(0, asarIndex + 4);
+    const candidates = [
+      path.resolve(appDir, '..'),
+      path.resolve(appDir, '..', '..'),
+      process.cwd(),
+      '/Users/muralidharshenoy/Desktop/My_Website/MS_Music.Com'
+    ];
+    let found = false;
+    for (const cand of candidates) {
+      if (cand && fs.existsSync(path.join(cand, 'src', 'content')) && fs.existsSync(path.join(cand, 'package.json'))) {
+        ROOT_DIR = cand;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       ROOT_DIR = ASAR_PATH;
     }
   } else {
@@ -43,6 +52,70 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 // Content directory
 const CONTENT_DIR = path.join(ROOT_DIR, 'src', 'content');
+
+const USER_DATA_DIR = process.env.APPDATA || (
+  process.platform === 'darwin' 
+    ? path.join(process.env.HOME, 'Library', 'Application Support', 'MS Music Studio') 
+    : path.join(process.env.HOME, '.config', 'MS Music Studio')
+);
+
+try {
+  if (!fs.existsSync(USER_DATA_DIR)) {
+    fs.mkdirSync(USER_DATA_DIR, { recursive: true });
+  }
+} catch (e) {}
+
+function getGitConfigPath() {
+  if (ROOT_DIR.includes('app.asar') || __dirname.includes('app.asar')) {
+    return path.join(USER_DATA_DIR, 'git-config.json');
+  }
+  return path.join(ROOT_DIR, 'studio', 'git-config.json');
+}
+
+function readSavedPat() {
+  const pathsToCheck = [
+    path.join(USER_DATA_DIR, 'git-config.json'),
+    path.join(ROOT_DIR, 'studio', 'git-config.json')
+  ];
+  for (const p of pathsToCheck) {
+    try {
+      if (fs.existsSync(p) && !p.includes('app.asar')) {
+        const raw = fs.readFileSync(p, 'utf8');
+        const cfg = JSON.parse(raw);
+        if (cfg && cfg.githubPat) return cfg.githubPat.trim();
+      }
+    } catch (e) {}
+  }
+  return '';
+}
+
+function savePat(pat) {
+  const targetPath = getGitConfigPath();
+  const dir = path.dirname(targetPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(targetPath, JSON.stringify({ githubPat: pat, updatedAt: new Date().toISOString() }, null, 2));
+}
+
+function getGitPushCommand() {
+  const gitPat = readSavedPat();
+
+  let remoteUrl = '';
+  try {
+    remoteUrl = execSync('git config --get remote.origin.url', { cwd: ROOT_DIR }).toString().trim();
+  } catch (e) {}
+
+  if (!remoteUrl || !remoteUrl.includes('github.com')) {
+    remoteUrl = 'https://github.com/Sriniketh-M-Shenoy/MS_Music.Com.git';
+  }
+
+  const cleanRemote = remoteUrl.replace(/^https?:\/\/(?:[^@]+@)?/, '');
+  if (gitPat && cleanRemote) {
+    return `git push https://${encodeURIComponent(gitPat)}@${cleanRemote} main`;
+  }
+  return 'git push origin main';
+}
 
 // Helper to set CORS headers
 function setCorsHeaders(res) {
@@ -447,7 +520,8 @@ const server = http.createServer(async (req, res) => {
         }
 
         steps.push('Pushing restored version live to GitHub...');
-        execSync('git push origin main', { cwd: ROOT_DIR });
+        const pushCmd = getGitPushCommand();
+        execSync(pushCmd, { cwd: ROOT_DIR });
 
         steps.push('Deploying live website...');
         try {
@@ -528,14 +602,16 @@ const server = http.createServer(async (req, res) => {
           execSync('git checkout --ours .', { cwd: ROOT_DIR });
           execSync('git add .', { cwd: ROOT_DIR });
           execSync('git commit -m "Resolved merge conflict: Kept current version"', { cwd: ROOT_DIR });
-          execSync('git push origin main', { cwd: ROOT_DIR });
+          const pushCmd = getGitPushCommand();
+          execSync(pushCmd, { cwd: ROOT_DIR });
           steps.push('Conflict resolved and pushed live!');
         } else if (strategy === 'use_restored') {
           steps.push('Resolving conflicts: Using target restored version (--theirs)...');
           execSync('git checkout --theirs .', { cwd: ROOT_DIR });
           execSync('git add .', { cwd: ROOT_DIR });
           execSync('git commit -m "Resolved merge conflict: Used restored version"', { cwd: ROOT_DIR });
-          execSync('git push origin main', { cwd: ROOT_DIR });
+          const pushCmd = getGitPushCommand();
+          execSync(pushCmd, { cwd: ROOT_DIR });
           steps.push('Conflict resolved and restored version published live!');
         } else if (strategy === 'abort') {
           steps.push('Aborting merge / revert process...');
@@ -644,7 +720,8 @@ const server = http.createServer(async (req, res) => {
         execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: ROOT_DIR });
 
         steps.push('Pushing to GitHub...');
-        execSync('git push origin main', { cwd: ROOT_DIR });
+        const pushCmd = getGitPushCommand();
+        execSync(pushCmd, { cwd: ROOT_DIR });
 
         steps.push('Building & Deploying to GitHub Pages...');
         try {
