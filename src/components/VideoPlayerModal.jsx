@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Youtube, Eye, Calendar, Sparkles } from 'lucide-react';
+import { X, ExternalLink, Youtube, Eye, Calendar, BellRing } from 'lucide-react';
+import { incrementCounter } from '../utils/metrics';
 
 export default function VideoPlayerModal({ video, isOpen, onClose }) {
   useEffect(() => {
@@ -20,6 +21,12 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
   if (!isOpen || !video) return null;
 
   const isShort = video.type === 'Short';
+  const subscribeUrl = 'https://www.youtube.com/@muralidharshenoykochi?sub_confirmation=1';
+
+  const handleSubscribeClick = () => {
+    incrementCounter('youtube_subscribe_clicks');
+    incrementCounter('social_clicks_youtube');
+  };
 
   return (
     <AnimatePresence>
@@ -43,25 +50,40 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Bar */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-zinc-900/60">
-            <div className="flex items-center gap-2.5 min-w-0 pr-4">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-zinc-900/70">
+            <div className="flex items-center gap-2.5 min-w-0 pr-3">
               <div className="w-7 h-7 rounded-lg bg-red-600/20 text-red-500 flex items-center justify-center shrink-0">
                 <Youtube className="w-4 h-4" />
               </div>
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 shrink-0">
                 {isShort ? 'YouTube Short' : 'YouTube Video'}
               </span>
-              <span className="text-xs text-zinc-400 truncate hidden sm:inline">
+              <span className="text-xs text-zinc-400 truncate hidden md:inline">
                 • {video.title}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Subscribe Button in Header */}
+              <motion.a
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                href={subscribeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleSubscribeClick}
+                className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-full shadow-lg shadow-red-600/30 transition-all cursor-pointer"
+                title="Subscribe to @muralidharshenoykochi on YouTube"
+              >
+                <BellRing className="w-3.5 h-3.5" />
+                <span>Subscribe</span>
+              </motion.a>
+
               <a
                 href={video.url || `https://www.youtube.com/watch?v=${video.videoId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-white px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                 title="Open directly on YouTube"
               >
                 <span>YouTube</span>
@@ -79,7 +101,7 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
           </div>
 
           {/* Video Player Frame */}
-          <div className={`relative bg-black w-full ${isShort ? 'aspect-[9/16] max-h-[72vh] mx-auto' : 'aspect-video'}`}>
+          <div className={`relative bg-black w-full ${isShort ? 'aspect-[9/16] max-h-[70vh] mx-auto' : 'aspect-video'}`}>
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
               title={video.title}
@@ -90,36 +112,51 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
           </div>
 
           {/* Bottom Details Footer */}
-          <div className="p-4 sm:p-5 bg-zinc-950/90 border-t border-white/10 space-y-2">
-            <h3 className="font-sans text-sm sm:text-base font-bold text-white line-clamp-2">
+          <div className="p-4 sm:p-5 bg-zinc-950/95 border-t border-white/10 space-y-3">
+            <h3 className="font-sans text-sm sm:text-base font-bold text-white line-clamp-2 leading-snug">
               {video.title}
             </h3>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400 pt-1">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400 pt-1 border-t border-white/5">
               <div className="flex items-center gap-4">
                 {video.views && (
-                  <span className="flex items-center gap-1 text-zinc-300 font-mono text-[11px]">
+                  <span className="flex items-center gap-1.5 text-zinc-300 font-mono text-xs">
                     <Eye className="w-3.5 h-3.5 text-amber-400" />
                     {video.views}
                   </span>
                 )}
                 {(video.timeAgo || video.date) && (
-                  <span className="flex items-center gap-1 text-zinc-400 font-mono text-[11px]">
+                  <span className="flex items-center gap-1.5 text-zinc-400 font-mono text-xs">
                     <Calendar className="w-3.5 h-3.5 text-zinc-500" />
                     {video.timeAgo || video.date}
                   </span>
                 )}
               </div>
 
-              <a
-                href={video.url || `https://www.youtube.com/watch?v=${video.videoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="sm:hidden inline-flex items-center gap-1.5 text-xs text-red-400 font-semibold"
-              >
-                <span>Open in YouTube app</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              {/* Footer Channel Link & Direct Subscribe */}
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://www.youtube.com/@muralidharshenoykochi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs text-zinc-400 hover:text-amber-300 transition-colors hidden sm:inline"
+                >
+                  @muralidharshenoykochi
+                </a>
+
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  href={subscribeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleSubscribeClick}
+                  className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-full shadow-md transition-all cursor-pointer"
+                >
+                  <BellRing className="w-3.5 h-3.5" />
+                  <span>Subscribe on YouTube</span>
+                </motion.a>
+              </div>
             </div>
           </div>
         </motion.div>
