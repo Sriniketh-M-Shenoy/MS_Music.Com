@@ -82,7 +82,9 @@
   background: #44444a;
 }
 
-/* LIGHT MODE SUPPORT */
+/* LIGHT MODE COMPREHENSIVE STYLES */
+html.light-mode,
+body.light-mode,
 .light-mode {
   background-color: #f8fafc !important;
   color: #0f172a !important;
@@ -93,35 +95,133 @@
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-.light-mode .apple-bento {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important;
-}
-
-.light-mode .apple-bento:hover {
-  background: #ffffff !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
-  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.1) !important;
-}
-
-.light-mode h1, .light-mode h2, .light-mode h3, .light-mode h4 {
+/* Headings and Titles in Light Mode */
+.light-mode h1,
+.light-mode h2,
+.light-mode h3,
+.light-mode h4,
+.light-mode h5,
+.light-mode h6 {
   color: #0f172a !important;
 }
 
+/* Paragraphs and Body Text in Light Mode */
 .light-mode p {
   color: #334155 !important;
 }
 
+/* High-Contrast Conversion of White and Light Gray Text */
+.light-mode .text-white,
+.light-mode span.text-white,
+.light-mode div.text-white,
+.light-mode a.text-white,
+.light-mode strong.text-white,
+.light-mode b.text-white,
+.light-mode label.text-white,
+.light-mode li.text-white {
+  color: #0f172a !important;
+}
+
+.light-mode .text-gray-100,
+.light-mode .text-gray-200,
+.light-mode .text-gray-300,
+.light-mode .text-zinc-100,
+.light-mode .text-zinc-200,
+.light-mode .text-zinc-300,
+.light-mode .text-slate-100,
+.light-mode .text-slate-200,
+.light-mode .text-slate-300 {
+  color: #1e293b !important;
+}
+
+.light-mode .text-gray-400,
+.light-mode .text-zinc-400,
+.light-mode .text-slate-400 {
+  color: #475569 !important;
+}
+
+.light-mode .text-gray-500,
+.light-mode .text-zinc-500,
+.light-mode .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Amber text adjustments for light backgrounds */
+.light-mode .text-amber-400 {
+  color: #b45309 !important;
+}
+
+.light-mode .text-amber-300 {
+  color: #92400e !important;
+}
+
+/* Gradient Text Overrides */
 .light-mode .apple-text-gradient {
-  background: linear-gradient(180deg, #0f172a 0%, #475569 100%) !important;
+  background: linear-gradient(180deg, #0f172a 0%, #334155 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
-.light-mode nav {
-  background: rgba(255, 255, 255, 0.85) !important;
+.light-mode .apple-gold-gradient {
+  background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #92400e 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Bento Boxes and Cards in Light Mode */
+.light-mode .apple-bento,
+.light-mode .bg-zinc-950,
+.light-mode .bg-zinc-950\/80,
+.light-mode .bg-zinc-950\/90,
+.light-mode .bg-zinc-950\/95,
+.light-mode .bg-zinc-900,
+.light-mode .bg-zinc-900\/60,
+.light-mode .bg-zinc-900\/70,
+.light-mode .bg-zinc-900\/80,
+.light-mode .bg-zinc-900\/90 {
+  background-color: #ffffff !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
+}
+
+.light-mode .apple-bento:hover,
+.light-mode .hover\:bg-zinc-900:hover {
+  background-color: #f8fafc !important;
+  border-color: rgba(217, 119, 6, 0.4) !important;
+  box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Borders in Light Mode */
+.light-mode .border-white\/10,
+.light-mode .border-white\/15,
+.light-mode .border-white\/20,
+.light-mode .border-white\/5,
+.light-mode .border-zinc-800,
+.light-mode .border-zinc-800\/80,
+.light-mode .border-zinc-700 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Background highlights in Light Mode */
+.light-mode .bg-white\/5,
+.light-mode .bg-white\/10,
+.light-mode .bg-white\/\[0\.04\] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light-mode .hover\:bg-white\/10:hover,
+.light-mode .hover\:bg-white\/20:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Navbar in Light Mode */
+.light-mode nav {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
 }
 
 .light-mode nav a {
@@ -132,21 +232,85 @@
   color: #0f172a !important;
 }
 
-.light-mode nav .text-white {
+.light-mode nav span.text-white {
   color: #0f172a !important;
 }
 
+/* Floating Audio Player in Light Mode */
 .light-mode .apple-player-bar {
   background: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12) !important;
+}
+
+.light-mode .apple-player-bar .text-white {
   color: #0f172a !important;
 }
 
+/* Footer in Light Mode */
 .light-mode footer {
   background-color: #f1f5f9 !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 .light-mode footer .text-white {
   color: #0f172a !important;
+}
+
+/* Form Inputs in Light Mode */
+.light-mode input:not([type="checkbox"]):not([type="radio"]),
+.light-mode textarea,
+.light-mode select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-mode input::placeholder,
+.light-mode textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* PRESERVE LEGIBILITY ON COLORED BUTTONS & BADGES */
+.light-mode .bg-red-600,
+.light-mode .bg-red-600 *,
+.light-mode .bg-red-500,
+.light-mode .bg-red-500 *,
+.light-mode .bg-blue-600,
+.light-mode .bg-blue-600 *,
+.light-mode .bg-rose-500,
+.light-mode .bg-rose-500 *,
+.light-mode .bg-purple-600,
+.light-mode .bg-purple-600 *,
+.light-mode a.bg-red-600,
+.light-mode a.bg-red-500,
+.light-mode a.bg-blue-600,
+.light-mode button.bg-red-600,
+.light-mode button.bg-red-500 {
+  color: #ffffff !important;
+}
+
+/* Amber gradient buttons */
+.light-mode .bg-gradient-to-r.from-amber-500,
+.light-mode .bg-gradient-to-r.from-amber-500 * {
+  color: #000000 !important;
+}
+
+/* White CTA buttons switch to elegant black in light mode */
+.light-mode button.bg-white,
+.light-mode a.bg-white {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.light-mode button.bg-white:hover,
+.light-mode a.bg-white:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+.light-mode button.bg-white *,
+.light-mode a.bg-white * {
+  color: #ffffff !important;
 }
