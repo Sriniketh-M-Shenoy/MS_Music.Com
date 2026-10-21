@@ -76,6 +76,7 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
       },
       socials: effectiveContent.socials || defaultSiteConfig.socials,
       latestPosts: effectiveContent.posts || defaultSiteConfig.latestPosts,
+      videos: effectiveContent.videos || defaultSiteConfig.videos,
       googleForm: {
         enabled: effectiveContent.socials ? (effectiveContent.socials.googleFormEnabled !== false) : defaultSiteConfig.googleForm.enabled,
         title: "Booking Enquiry & Performance Request",
