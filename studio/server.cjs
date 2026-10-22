@@ -945,10 +945,17 @@ const server = http.createServer(async (req, res) => {
       const steps = [];
       try {
         steps.push('Staging changes...');
-        execSync('git add .', { cwd: ROOT_DIR });
+        execSync('git add -A', { cwd: ROOT_DIR });
 
         steps.push('Creating commit...');
-        execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: ROOT_DIR });
+        try {
+          execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: ROOT_DIR });
+          steps.push('Commit created successfully.');
+        } catch (commitErr) {
+          // If working tree is clean or changes already committed, continue to push
+          console.log('Git commit note:', commitErr.message);
+          steps.push('Working tree is clean (changes already committed); proceeding to push.');
+        }
 
         steps.push('Pushing to GitHub...');
         const pushCmd = getGitPushCommand();

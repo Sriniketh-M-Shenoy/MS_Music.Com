@@ -6,7 +6,7 @@ import {
   X, Play, Pause, ExternalLink, Check, ChevronRight, History, RotateCcw,
   GitBranch, GitCommit, GitMerge, AlertTriangle, ShieldAlert,
   BarChart3, Key, Lock, Ticket, TrendingUp, Activity, ShieldCheck, Info,
-  Youtube, Search
+  Youtube, Search, Star
 } from 'lucide-react';
 import { 
   getCounterValue, sanitizeCounterId, API_KEY,
