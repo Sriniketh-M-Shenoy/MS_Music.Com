@@ -5,7 +5,7 @@ export const heroContent = {
   name: "Muralidhar Shenoy (MS)",
   title: "Playback Singer & Music Composer",
   tagline: "Playback Singer & Music Composer",
-  subtitle: "Devotional, Light & Classical Vocal Performance",
+  subtitle: "Film, Devotional, Light & Classical Vocal Performance",
   heroImage: heroBg,
   signatureImage: msSignature,
   bookingButtonText: "Booking Enquiry"
