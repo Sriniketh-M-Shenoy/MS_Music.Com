@@ -35,12 +35,12 @@ export const audioTracksContent = [
   },
   {
     id: 1792610958603,
-    title: "Kudajadriyil Kolikollum",
-    genre: "Devotional / Classical",
-    language: "Malayam",
+    title: "Amma Endrazhaikatha",
+    genre: "Movie Song/Mannan",
+    language: "Tamil",
     duration: "03:30",
     spotifyUrl: "",
-    audioUrl: "/uploads/Kudajadri_Murali_1792611022233.wav",
+    audioUrl: "/uploads/AmmaEndrzhaykatha_Final_1792647747691.mp3",
     coverImage: picSingingMic
   }
 ];

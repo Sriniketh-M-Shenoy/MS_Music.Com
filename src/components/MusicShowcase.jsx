@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, ExternalLink, Music2, Volume2, VolumeX, X, RotateCcw } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
-import { incrementCounter, sanitizeCounterId } from '../utils/metrics';
+import { recordSongPlay, incrementCounter, sanitizeCounterId } from '../utils/metrics';
 
 function resolveAudioSrc(url) {
   if (!url) return '';
