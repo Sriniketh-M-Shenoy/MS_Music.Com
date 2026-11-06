@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { filterUpcomingConcerts } from '../src/utils/concerts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,33 +31,26 @@ function saveEvents(events) {
   fs.writeFileSync(eventsPath, fileContent, 'utf-8');
 }
 
-function isFutureOrToday(event) {
-  if (!event || !event.date) return false;
-  // Parse event date (YYYY-MM-DD)
-  const [year, month, day] = event.date.split('-').map(Number);
-  if (!year || !month || !day) return true; // keep if non-standard
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const eventDate = new Date(year, month - 1, day);
-  eventDate.setHours(0, 0, 0, 0);
-
-  return eventDate.getTime() >= today.getTime();
-}
-
-function main() {
+export function cleanPastConcerts() {
   const { events } = loadEvents();
   const initialCount = events.length;
-  const filtered = events.filter(isFutureOrToday);
+  const filtered = filterUpcomingConcerts(events);
 
   if (filtered.length === initialCount) {
     console.log(`[Clean Concerts] All ${initialCount} concert(s) are upcoming or today. No past concerts to remove.`);
-    return;
+    return { pruned: 0, retained: initialCount, events: filtered };
   }
 
   saveEvents(filtered);
   console.log(`[Clean Concerts] Successfully pruned ${initialCount - filtered.length} past concert(s). ${filtered.length} upcoming concert(s) retained.`);
+  return { pruned: initialCount - filtered.length, retained: filtered.length, events: filtered };
 }
 
-main();
+function main() {
+  cleanPastConcerts();
+}
+
+// Run immediately if executed directly via CLI
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main();
+}

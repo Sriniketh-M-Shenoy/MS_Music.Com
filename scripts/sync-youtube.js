@@ -13,7 +13,7 @@ const HEADERS = {
 };
 
 // Helper: parse relative time string into an approximate YYYY-MM-DD
-function parseRelativeTime(timeAgo) {
+export function parseRelativeTime(timeAgo) {
   if (!timeAgo) return new Date().toISOString().split('T')[0];
   const now = Date.now();
   const match = timeAgo.match(/(\d+)\s*([a-zA-Z]+)/);
@@ -38,6 +38,11 @@ function parseRelativeTime(timeAgo) {
     ms = num * 365 * 24 * 3600 * 1000;
   }
   return new Date(now - ms).toISOString().split('T')[0];
+}
+
+export function sortMediaChronological(items) {
+  if (!Array.isArray(items)) return [];
+  return [...items].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 }
 
 export async function fetchYouTubeMedia() {
@@ -247,12 +252,12 @@ export async function fetchYouTubeMedia() {
   }
 
   // 4. Sort strictly chronologically descending (newest first)
-  finalItems.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  const sortedFinalItems = sortMediaChronological(finalItems);
 
-  const code = `// Automatically synced YouTube videos & shorts from @muralidharshenoykochi\nexport const videosContent = ${JSON.stringify(finalItems, null, 2)};\n`;
+  const code = `// Automatically synced YouTube videos & shorts from @muralidharshenoykochi\nexport const videosContent = ${JSON.stringify(sortedFinalItems, null, 2)};\n`;
   fs.writeFileSync(videosPath, code, 'utf-8');
-  console.log(`[Sync YouTube] Successfully synced ${finalItems.length} videos & shorts in chronological order!`);
-  return finalItems;
+  console.log(`[Sync YouTube] Successfully synced ${sortedFinalItems.length} videos & shorts in chronological order!`);
+  return sortedFinalItems;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

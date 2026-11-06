@@ -3,18 +3,7 @@ import { motion } from 'framer-motion';
 import { Mail, Send, CheckCircle2, Phone, User, MessageSquare, ExternalLink, FileSpreadsheet, Calendar, Clock } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { incrementCounter } from '../utils/metrics';
-
-function formatGoogleFormEmbedUrl(url) {
-  if (!url || url.includes('dummyFormIdHere')) {
-    return 'https://docs.google.com/forms/d/e/1FAIpQLSf6l5M_fN5wiZL2p7vWhLEZQUXpDIkhxdhl2C-GKPNp5aQK1g/viewform?embedded=true';
-  }
-  const trimmed = url.trim();
-  if (trimmed.includes('embedded=true')) return trimmed;
-  if (trimmed.includes('/viewform')) {
-    return trimmed.replace(/\/viewform(\?.*)?$/, '/viewform?embedded=true');
-  }
-  return trimmed;
-}
+import { formatGoogleFormEmbedUrl, generateEnquiryMailto } from '../utils/enquiry';
 
 export default function EnquirySection() {
   const siteConfig = useSiteConfig();
@@ -82,16 +71,21 @@ export default function EnquirySection() {
     incrementCounter('enquiry_form_submits');
     setSubmitted(true);
     const email = siteConfig.socials?.email || "booking.muralidharshenoy@gmail.com";
-    const subject = encodeURIComponent(`Concert Booking Enquiry from ${formData.name}`);
-    const body = encodeURIComponent(
-      `Hello Muralidhar Shenoy,\n\nI would like to enquire about booking a concert / performance.\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone Number: ${formData.phone}\nProposed Concert Date: ${formData.eventDate || 'Not specified'}\nProposed Concert Time: ${formData.eventTime || 'Not specified'}\n\nEnquiry Details:\n${formData.message}\n\nBest regards,\n${formData.name}`
-    );
+    const mailtoUrl = generateEnquiryMailto({
+      email,
+      name: formData.name,
+      senderEmail: formData.email,
+      phone: formData.phone,
+      eventDate: formData.eventDate,
+      eventTime: formData.eventTime,
+      message: formData.message
+    });
 
     try {
       navigator.clipboard.writeText(`To: ${email}\nSubject: Concert Booking Enquiry\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nProposed Date: ${formData.eventDate || 'N/A'}\nProposed Time: ${formData.eventTime || 'N/A'}\nDetails:\n${formData.message}`);
     } catch (err) {}
 
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    window.location.href = mailtoUrl;
   };
 
   const showBothTabs = isGoogleFormEnabled && isEmailFormEnabled;

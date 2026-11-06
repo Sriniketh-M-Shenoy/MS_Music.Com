@@ -12,6 +12,7 @@ import {
   getCounterValue, sanitizeCounterId, API_KEY,
   getVideoCounterId, recordMediaClick, getLocalMediaClicks, incrementCounter
 } from '../utils/metrics';
+import { filterUpcomingConcerts, isUpcomingConcert, sortConcertsAscending } from '../utils/concerts';
 import VideoPlayerModal from '../components/VideoPlayerModal';
 
 import { 
@@ -59,7 +60,7 @@ export default function StudioApp({ onCloseStudio }) {
   const [posts, setPosts] = useState(() => getInitialDraft('posts', initialPosts));
   const [videos, setVideos] = useState(() => getInitialDraft('videos', initialVideos || []));
   const [audio, setAudio] = useState(() => getInitialDraft('audio', initialAudio));
-  const [events, setEvents] = useState(() => getInitialDraft('events', initialEvents));
+  const [events, setEvents] = useState(() => filterUpcomingConcerts(getInitialDraft('events', initialEvents)));
   const [gallery, setGallery] = useState(() => getInitialDraft('gallery', initialGallery));
   const [testimonials, setTestimonials] = useState(() => getInitialDraft('testimonials', initialTestimonials));
   const [faqs, setFaqs] = useState(() => getInitialDraft('faqs', initialFaqs));
@@ -1327,29 +1328,44 @@ export default function StudioApp({ onCloseStudio }) {
                         Manage upcoming concerts, date order, ticketed booking links, and registered click counters.
                       </p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newTitle = "New Live Concert Evening";
-                        setEvents([...events, {
-                          id: Date.now(),
-                          title: newTitle,
-                          date: new Date().toISOString().split('T')[0],
-                          formattedDate: "DEC 20, 2026",
-                          time: "6:30 PM IST",
-                          venue: "Auditorium Hall",
-                          city: "Bengaluru",
-                          status: "Available",
-                          category: "Public Concert",
-                          ticketed: false,
-                          ticketUrl: ""
-                        }]);
-                        markDirty();
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Event
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {events.some(e => !isUpcomingConcert(e)) && (
+                        <button
+                          onClick={() => {
+                            setEvents(filterUpcomingConcerts(events));
+                            markDirty();
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 font-bold text-xs shadow-md transition-all cursor-pointer"
+                          title="Remove all past concerts from the list"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Prune Past Concerts
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          const newTitle = "New Live Concert Evening";
+                          setEvents([...events, {
+                            id: Date.now(),
+                            title: newTitle,
+                            date: new Date().toISOString().split('T')[0],
+                            formattedDate: "DEC 20, 2026",
+                            time: "6:30 PM IST",
+                            venue: "Auditorium Hall",
+                            city: "Bengaluru",
+                            status: "Available",
+                            category: "Public Concert",
+                            ticketed: false,
+                            ticketUrl: ""
+                          }]);
+                          markDirty();
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Event
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -1359,7 +1375,14 @@ export default function StudioApp({ onCloseStudio }) {
                         <div key={evt.id || index} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4 shadow-md">
                           <div className="flex justify-between items-center gap-3">
                             <div className="flex-grow">
-                              <label className="text-[11px] text-zinc-400 font-semibold block mb-1">Concert Title</label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[11px] text-zinc-400 font-semibold">Concert Title</label>
+                                {!isUpcomingConcert(evt) && (
+                                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+                                    Past Date (Pruned from live site)
+                                  </span>
+                                )}
+                              </div>
                               <input
                                 type="text"
                                 value={evt.title || ''}

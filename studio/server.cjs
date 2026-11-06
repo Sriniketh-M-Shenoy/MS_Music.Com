@@ -333,8 +333,33 @@ import picMicBlack from '../assets/gallery/pic_mic_black.png';\n\n`;
   return `${defaultImports}export const audioTracksContent = [\n${itemsCode}\n];`;
 }
 
+function isUpcomingConcert(event) {
+  if (!event || !event.date) return false;
+  const str = String(event.date).trim();
+  const ymdMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10) - 1;
+    const day = parseInt(ymdMatch[3], 10);
+    const d = new Date(year, month, day);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() >= today.getTime();
+  }
+
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    parsed.setHours(0, 0, 0, 0);
+    return parsed.getTime() >= today.getTime();
+  }
+  return true;
+}
+
 function generateEventsJs(data) {
-  const itemsCode = data.map((item, index) => `  {
+  const upcomingOnly = Array.isArray(data) ? data.filter(isUpcomingConcert) : [];
+  const itemsCode = upcomingOnly.map((item, index) => `  {
     id: ${item.id || index + 1},
     title: ${JSON.stringify(item.title || "")},
     date: ${JSON.stringify(item.date || "")},
@@ -993,6 +1018,26 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // 7.6 POST /api/clean-past-concerts
+    if (pathname === '/api/clean-past-concerts' && req.method === 'POST') {
+      try {
+        const cleanScript = path.join(ROOT_DIR, 'scripts', 'clean-past-concerts.js');
+        exec(`node "${cleanScript}"`, (err, stdout, stderr) => {
+          if (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: stderr || err.message }));
+          } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, output: stdout.trim() }));
+          }
+        });
+      } catch (cleanErr) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: cleanErr.message }));
+      }
+      return;
+    }
+
     // 8. POST /api/save-content
     if (pathname === '/api/save-content' && req.method === 'POST') {
       const body = await readJsonBody(req);
@@ -1169,6 +1214,13 @@ server.on('error', (err) => {
 server.listen(PORT, () => {
   console.log(`[MS Studio API] Server running on http://localhost:${PORT}`);
   autoPullLatest();
+  // Automatically clean past concerts on server launch
+  try {
+    const cleanScript = path.join(ROOT_DIR, 'scripts', 'clean-past-concerts.js');
+    exec(`node "${cleanScript}"`, (err, stdout) => {
+      if (!err && stdout) console.log('[MS Studio API]', stdout.trim());
+    });
+  } catch (e) {}
   // Automatically sync latest YouTube videos & shorts on server launch in the background
   syncYouTubeChannelVideos()
     .then(items => console.log(`[MS Studio API] Background YouTube sync complete (${items.length} items).`))

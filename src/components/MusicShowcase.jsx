@@ -4,33 +4,13 @@ import { Play, Pause, ExternalLink, Music2, Volume2, VolumeX, X, RotateCcw } fro
 import { useSiteConfig } from '../config/siteConfig';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
 import { recordSongPlay, incrementCounter, sanitizeCounterId } from '../utils/metrics';
+import { formatTime, resolveAudioSrc } from '../utils/audio';
 
-function resolveAudioSrc(url) {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
-    return trimmed;
-  }
-  if (trimmed.startsWith('/uploads/')) {
-    if (typeof window !== 'undefined') {
-      const isDev = window.location.port === '5173' || window.location.port === '3000' || window.location.port === '4173';
-      const isElectron = window.location.protocol === 'file:' || window.location.hostname === '';
-      if (isDev || isElectron) {
-        return `http://localhost:3001${trimmed}`;
-      }
-      const base = import.meta.env.BASE_URL || './';
-      const cleanBase = base.endsWith('/') ? base : `${base}/`;
-      return `${cleanBase}${trimmed.replace(/^\//, '')}`;
-    }
-  }
-  return trimmed;
-}
-
-function formatTime(seconds) {
-  if (isNaN(seconds) || seconds < 0) return '00:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+function resolveAudio(url) {
+  if (typeof window === 'undefined') return url;
+  const isDev = window.location.port === '5173' || window.location.port === '3000' || window.location.port === '4173';
+  const isElectron = window.location.protocol === 'file:' || window.location.hostname === '';
+  return resolveAudioSrc(url, { isDev, isElectron, baseUrl: import.meta.env?.BASE_URL });
 }
 
 export default function MusicShowcase() {
@@ -60,7 +40,7 @@ export default function MusicShowcase() {
     incrementCounter(`song_plays_${sanitizeCounterId(track.title)}`);
     incrementCounter('total_song_plays');
 
-    const audioSrc = resolveAudioSrc(track.audioUrl);
+    const audioSrc = resolveAudio(track.audioUrl);
     if (audioSrc) {
       // Direct local audio file uploaded! Play inline on site.
       if (activeTrack?.id === track.id) {

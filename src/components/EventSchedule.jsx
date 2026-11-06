@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import { Calendar, ChevronRight, MapPin, Clock, Tag, Ticket, ExternalLink, Star } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { incrementCounter, getCounterValue, sanitizeCounterId } from '../utils/metrics';
+import { filterUpcomingConcerts, sortConcertsAscending } from '../utils/concerts';
 
 export default function EventSchedule({ onOpenBooking }) {
   const siteConfig = useSiteConfig();
-  const events = siteConfig.events || [];
+  const rawEvents = siteConfig.events || [];
 
-  // Sort concerts ascending: earliest date first, later dates after
-  const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+  // Automatically exclude past concerts and sort ascending (earliest upcoming date first)
+  const sortedEvents = sortConcertsAscending(filterUpcomingConcerts(rawEvents));
 
   // Local state for tracking concerts user is interested in
   const [interestedMap, setInterestedMap] = useState(() => {
@@ -33,7 +34,7 @@ export default function EventSchedule({ onOpenBooking }) {
         }
       }
     });
-  }, [events]);
+  }, [rawEvents]);
 
   const handleBookTicket = async (evt) => {
     const counterName = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;

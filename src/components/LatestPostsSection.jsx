@@ -4,6 +4,7 @@ import { Youtube, Instagram, Facebook, Play, Eye, Calendar, Sparkles, ChevronDow
 import { useSiteConfig } from '../config/siteConfig';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
 import { recordMediaClick, getLocalMediaClicks, incrementCounter } from '../utils/metrics';
+import { filterMediaItems } from '../utils/mediaSearch';
 import VideoPlayerModal from './VideoPlayerModal';
 
 export default function LatestPostsSection() {
@@ -58,23 +59,7 @@ export default function LatestPostsSection() {
 
   // Apply active category filter + search query filtering
   const filteredItems = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    return allMediaItems.filter(item => {
-      // 1. Tab category filter
-      if (activeFilter === 'videos' && (!item.isYouTube || item.type !== 'Video')) return false;
-      if (activeFilter === 'shorts' && (!item.isYouTube || item.type !== 'Short')) return false;
-      if (activeFilter === 'socials' && item.isYouTube) return false;
-
-      // 2. Search query filter across title, description, and platform/type
-      if (query) {
-        const titleMatch = (item.title || '').toLowerCase().includes(query);
-        const descMatch = (item.description || '').toLowerCase().includes(query);
-        const typeMatch = (item.type || '').toLowerCase().includes(query);
-        const platformMatch = (item.platform || '').toLowerCase().includes(query);
-        if (!titleMatch && !descMatch && !typeMatch && !platformMatch) return false;
-      }
-      return true;
-    });
+    return filterMediaItems(allMediaItems, { filter: activeFilter, query: searchQuery });
   }, [allMediaItems, activeFilter, searchQuery]);
 
   const displayedItems = filteredItems.slice(0, visibleCount);
