@@ -2,7 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { filterUpcomingConcerts } from '../src/utils/concerts.js';
+import { filterUpcomingConcerts, sortConcertsAscending } from '../src/utils/concerts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,7 +34,7 @@ function saveEvents(events) {
 export function cleanPastConcerts() {
   const { events } = loadEvents();
   const initialCount = events.length;
-  const filtered = filterUpcomingConcerts(events);
+  const filtered = sortConcertsAscending(filterUpcomingConcerts(events));
 
   if (filtered.length === initialCount) {
     console.log(`[Clean Concerts] All ${initialCount} concert(s) are upcoming or today. No past concerts to remove.`);

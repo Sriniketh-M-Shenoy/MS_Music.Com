@@ -15,7 +15,7 @@ export const eventsContent = [
   {
     id: 1793949476059,
     title: "Test",
-    date: "2026-11-06",
+    date: "2026-12-20",
     formattedDate: "DEC 20, 2026",
     time: "6:30 PM IST",
     venue: "Auditorium Hall",
@@ -29,7 +29,7 @@ export const eventsContent = [
     id: 1793950528634,
     title: "test 2",
     date: "2026-12-21",
-    formattedDate: "DEC 21 2026",
+    formattedDate: "DEC 21, 2026",
     time: "6:30 PM IST",
     venue: "Auditorium Hall",
     city: "Bengaluru",

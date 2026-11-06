@@ -37,8 +37,7 @@ export default function MusicShowcase() {
   const handleTrackClick = (e, track) => {
     e.preventDefault();
 
-    incrementCounter(`song_plays_${sanitizeCounterId(track.title)}`);
-    incrementCounter('total_song_plays');
+    recordSongPlay(track);
 
     const audioSrc = resolveAudio(track.audioUrl);
     if (audioSrc) {

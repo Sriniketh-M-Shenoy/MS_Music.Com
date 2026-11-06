@@ -920,6 +920,18 @@ const server = http.createServer(async (req, res) => {
 
     // 6. POST /api/upload
     if (pathname === '/api/upload' && req.method === 'POST') {
+      const GITHUB_MAX_FILE_BYTES = 95 * 1024 * 1024; // 95 MB limit to stay under GitHub's 100 MB hard limit
+      const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+      if (contentLength > GITHUB_MAX_FILE_BYTES) {
+        const sizeMb = (contentLength / (1024 * 1024)).toFixed(1);
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: false,
+          error: `Upload size (${sizeMb} MB) exceeds GitHub's 100 MB limit (max allowed: 95 MB). Upload rejected to prevent git push failure.`
+        }));
+        return;
+      }
+
       const { fields, files } = await parseMultipartForm(req);
       if (!files || files.length === 0) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -928,6 +940,16 @@ const server = http.createServer(async (req, res) => {
       }
 
       const uploadedFile = files[0];
+      if (uploadedFile.buffer && uploadedFile.buffer.length > GITHUB_MAX_FILE_BYTES) {
+        const sizeMb = (uploadedFile.buffer.length / (1024 * 1024)).toFixed(1);
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: false,
+          error: `File "${uploadedFile.originalFilename || 'upload'}" is ${sizeMb} MB, exceeding GitHub's 100 MB limit (max allowed: 95 MB). Upload rejected to prevent git push failure.`
+        }));
+        return;
+      }
+
       let ext = path.extname(uploadedFile.originalFilename) || '.bin';
       const cleanName = path.basename(uploadedFile.originalFilename, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
       let filename = `${cleanName}_${Date.now()}${ext}`;
@@ -1015,6 +1037,21 @@ const server = http.createServer(async (req, res) => {
       try {
         steps.push('Staging changes...');
         execSync('git add -A', { cwd: ROOT_DIR });
+
+        // Pre-commit safety check: unstage any file over 95MB so git push will never fail
+        try {
+          const staged = execSync('git diff --cached --name-only', { cwd: ROOT_DIR, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+          for (const sFile of staged) {
+            const absP = path.join(ROOT_DIR, sFile);
+            if (fs.existsSync(absP)) {
+              const fStat = fs.statSync(absP);
+              if (fStat.size > 95 * 1024 * 1024) {
+                execSync(`git reset HEAD "${sFile}"`, { cwd: ROOT_DIR });
+                steps.push(`Notice: Unstaged "${sFile}" (${(fStat.size / (1024 * 1024)).toFixed(1)} MB) because it exceeds GitHub's 100 MB limit.`);
+              }
+            }
+          }
+        } catch (checkErr) {}
 
         steps.push('Creating commit...');
         try {

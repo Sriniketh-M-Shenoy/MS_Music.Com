@@ -10,9 +10,10 @@ import {
 } from 'lucide-react';
 import { 
   getCounterValue, sanitizeCounterId, API_KEY,
-  getVideoCounterId, recordMediaClick, getLocalMediaClicks, incrementCounter
+  getVideoCounterId, recordMediaClick, getLocalMediaClicks, incrementCounter,
+  getSongCounterId, recordSongPlay, getLocalSongPlays
 } from '../utils/metrics';
-import { filterUpcomingConcerts, isUpcomingConcert, sortConcertsAscending } from '../utils/concerts';
+import { filterUpcomingConcerts, isUpcomingConcert, sortConcertsAscending, formatConcertDate, parseConcertDate } from '../utils/concerts';
 import VideoPlayerModal from '../components/VideoPlayerModal';
 
 import { 
@@ -77,7 +78,7 @@ export default function StudioApp({ onCloseStudio }) {
   });
   const [studioVideoSearch, setStudioVideoSearch] = useState('');
   const [audio, setAudio] = useState(() => getInitialDraft('audio', initialAudio));
-  const [events, setEvents] = useState(() => filterUpcomingConcerts(getInitialDraft('events', initialEvents)));
+  const [events, setEvents] = useState(() => sortConcertsAscending(filterUpcomingConcerts(getInitialDraft('events', initialEvents))));
   const [gallery, setGallery] = useState(() => getInitialDraft('gallery', initialGallery));
   const [testimonials, setTestimonials] = useState(() => getInitialDraft('testimonials', initialTestimonials));
   const [faqs, setFaqs] = useState(() => getInitialDraft('faqs', initialFaqs));
@@ -262,11 +263,16 @@ export default function StudioApp({ onCloseStudio }) {
         getCounterValue('social_clicks_spotify')
       ]);
 
+      const localPlays = getLocalSongPlays();
       const songsBreakdown = {};
       await Promise.all((audio || []).map(async (t) => {
-        const cId = `song_plays_${sanitizeCounterId(t.title)}`;
-        songsBreakdown[t.title] = await getCounterValue(cId);
+        const cId = getSongCounterId(t.title);
+        const remoteCount = await getCounterValue(cId);
+        songsBreakdown[t.title] = Math.max(remoteCount, localPlays[t.title] || 0);
       }));
+
+      const localTotalSongPlays = localPlays['__total__'] || Object.entries(localPlays).reduce((acc, [k, v]) => k !== '__total__' && typeof v === 'number' ? acc + v : acc, 0);
+      const effectiveSongPlays = Math.max(songPlays || 0, localTotalSongPlays || 0);
 
       const concertsBreakdown = {};
       await Promise.all((events || []).map(async (evt) => {
@@ -302,7 +308,7 @@ export default function StudioApp({ onCloseStudio }) {
 
       setMetricsData({
         siteVisits: siteVisits || 0,
-        songPlays: songPlays || 0,
+        songPlays: effectiveSongPlays || 0,
         videoViews: videoViews || 0,
         shortViews: shortViews || 0,
         totalMediaViews: totalMediaViews || (videoViews || 0) + (shortViews || 0),
@@ -365,6 +371,30 @@ export default function StudioApp({ onCloseStudio }) {
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('ms_media_clicks_updated', handleMediaClickUpdate);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleSongPlayUpdate = (e) => {
+      if (e?.detail?.title) {
+        const title = e.detail.title;
+        setMetricsData(prev => ({
+          ...prev,
+          songPlays: (prev.songPlays || 0) + 1,
+          songsBreakdown: {
+            ...prev.songsBreakdown,
+            [title]: (prev.songsBreakdown[title] || 0) + 1
+          }
+        }));
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ms_song_plays_updated', handleSongPlayUpdate);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ms_song_plays_updated', handleSongPlayUpdate);
       }
     };
   }, []);
@@ -489,9 +519,19 @@ export default function StudioApp({ onCloseStudio }) {
     setIsDirty(true);
   };
 
-  // Upload handler helper
+  // Maximum file size permitted to prevent git push rejection (GitHub hard limit is 100 MB)
+  const GITHUB_MAX_FILE_BYTES = 95 * 1024 * 1024; // 95 MB safe cap
+
+  // Upload handler helper with GitHub file size restriction
   const handleFileUpload = async (file, onSuccess) => {
     if (!file) return;
+
+    if (file.size > GITHUB_MAX_FILE_BYTES) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      alert(`File "${file.name}" is ${sizeMb} MB, which exceeds GitHub's 100 MB file limit (max allowed: 95 MB).\n\nUploading this file will cause Git pushes and site deployments to fail.\n\nPlease select a video under 95 MB, or add it via the YouTube URL / ID option.`);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -1441,7 +1481,7 @@ export default function StudioApp({ onCloseStudio }) {
                       {events.some(e => !isUpcomingConcert(e)) && (
                         <button
                           onClick={() => {
-                            setEvents(filterUpcomingConcerts(events));
+                            setEvents(sortConcertsAscending(filterUpcomingConcerts(events)));
                             markDirty();
                           }}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 font-bold text-xs shadow-md transition-all cursor-pointer"
@@ -1454,11 +1494,15 @@ export default function StudioApp({ onCloseStudio }) {
                       <button
                         onClick={() => {
                           const newTitle = "New Live Concert Evening";
-                          setEvents([...events, {
+                          const defaultDate = new Date();
+                          defaultDate.setDate(defaultDate.getDate() + 14);
+                          const isoDate = defaultDate.toISOString().split('T')[0];
+                          const formatted = formatConcertDate(defaultDate);
+                          const updated = sortConcertsAscending([...events, {
                             id: Date.now(),
                             title: newTitle,
-                            date: new Date().toISOString().split('T')[0],
-                            formattedDate: "DEC 20, 2026",
+                            date: isoDate,
+                            formattedDate: formatted,
                             time: "6:30 PM IST",
                             venue: "Auditorium Hall",
                             city: "Bengaluru",
@@ -1467,6 +1511,7 @@ export default function StudioApp({ onCloseStudio }) {
                             ticketed: false,
                             ticketUrl: ""
                           }]);
+                          setEvents(updated);
                           markDirty();
                         }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all cursor-pointer"
@@ -1478,7 +1523,7 @@ export default function StudioApp({ onCloseStudio }) {
                   </div>
 
                   <div className="space-y-4">
-                    {events.map((evt, index) => {
+                    {sortConcertsAscending(events).map((evt, index) => {
                       const counterId = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
                       return (
                         <div key={evt.id || index} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4 shadow-md">
@@ -1523,9 +1568,13 @@ export default function StudioApp({ onCloseStudio }) {
                                 type="date"
                                 value={evt.date || ''}
                                 onChange={e => {
+                                  const val = e.target.value;
                                   const newE = [...events];
-                                  newE[index].date = e.target.value;
-                                  setEvents(newE);
+                                  newE[index].date = val;
+                                  if (val) {
+                                    newE[index].formattedDate = formatConcertDate(val);
+                                  }
+                                  setEvents(sortConcertsAscending(newE));
                                   markDirty();
                                 }}
                                 className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
@@ -1539,9 +1588,14 @@ export default function StudioApp({ onCloseStudio }) {
                                 placeholder="OCT 15, 2026"
                                 value={evt.formattedDate || ''}
                                 onChange={e => {
+                                  const val = e.target.value;
                                   const newE = [...events];
-                                  newE[index].formattedDate = e.target.value;
-                                  setEvents(newE);
+                                  newE[index].formattedDate = val;
+                                  const parsed = parseConcertDate(val);
+                                  if (parsed) {
+                                    newE[index].date = parsed.toISOString().split('T')[0];
+                                  }
+                                  setEvents(sortConcertsAscending(newE));
                                   markDirty();
                                 }}
                                 className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
@@ -1828,11 +1882,16 @@ export default function StudioApp({ onCloseStudio }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {/* Video file picker */}
                           <div>
-                            <label className="block text-[11px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                              <Upload className="w-3.5 h-3.5 text-amber-400" />
-                              <span>Select Video File from Device</span>
-                              <span className="text-amber-400 font-bold">*</span>
-                            </label>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <label className="text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5">
+                                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Select Video File from Device</span>
+                                <span className="text-amber-400 font-bold">*</span>
+                              </label>
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Max 95 MB (GitHub limit)
+                              </span>
+                            </div>
                             <input
                               type="file"
                               accept="video/mp4,video/webm,video/quicktime,video/ogg,video/*"
@@ -1841,6 +1900,12 @@ export default function StudioApp({ onCloseStudio }) {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
+                                  if (file.size > GITHUB_MAX_FILE_BYTES) {
+                                    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                                    alert(`File "${file.name}" is ${sizeMb} MB, which exceeds GitHub's 100 MB file limit (max allowed: 95 MB).\n\nUploading this file will cause Git pushes to fail. Please compress or select a video under 95 MB, or add it via the YouTube URL / ID option.`);
+                                    e.target.value = '';
+                                    return;
+                                  }
                                   handleFileUpload(file, (url) => {
                                     setNewVideoInput(prev => ({
                                       ...prev,
@@ -1863,6 +1928,9 @@ export default function StudioApp({ onCloseStudio }) {
                                 Browse
                               </span>
                             </label>
+                            <p className="text-[10px] text-zinc-500 mt-1">
+                              Files over 95 MB are blocked to prevent GitHub push failures. For large concert recordings, use YouTube.
+                            </p>
                             {newVideoInput.videoFileUrl && (
                               <p className="text-[10px] text-emerald-400 font-mono mt-1 flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3 shrink-0" />
