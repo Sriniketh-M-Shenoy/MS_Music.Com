@@ -8,7 +8,7 @@ export const videosContent = [
     "platform": "YouTube",
     "date": "2026-11-05",
     "views": "717 views",
-    "timeAgo": "17h ago",
+    "timeAgo": "18h ago",
     "url": "https://www.youtube.com/watch?v=eP7v-PhzJm4",
     "thumbnail": "https://i.ytimg.com/vi/eP7v-PhzJm4/hqdefault.jpg",
     "description": "Official vocal performance by Muralidhar Shenoy on YouTube."

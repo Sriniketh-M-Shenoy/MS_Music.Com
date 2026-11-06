@@ -13,10 +13,10 @@ export const eventsContent = [
     ticketUrl: ""
   },
   {
-    id: 1793949382296,
+    id: 1793949476059,
     title: "Test",
-    date: "2026-08-06",
-    formattedDate: "Aug 20, 2026",
+    date: "2026-11-06",
+    formattedDate: "DEC 20, 2026",
     time: "6:30 PM IST",
     venue: "Auditorium Hall",
     city: "Bengaluru",
