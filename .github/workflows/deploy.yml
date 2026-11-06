@@ -4,6 +4,9 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  # Auto-rebuild daily at midnight IST (18:30 UTC) to pick up new YouTube uploads
+  schedule:
+    - cron: '30 18 * * *'
 
 permissions:
   contents: read
@@ -32,6 +35,12 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Sync YouTube videos & shorts (latest uploads)
+        # Fetches the YouTube channel RSS feed and updates src/content/videos.js
+        # so the bundled fallback is always up-to-date even before client-side fetch
+        run: node scripts/sync-youtube.js
+        continue-on-error: true  # Don't fail build if YouTube is temporarily unreachable
 
       - name: Build
         run: npm run build

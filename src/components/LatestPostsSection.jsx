@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Youtube, Instagram, Facebook, Play, Eye, Calendar, Sparkles, ChevronDown, Search, X } from 'lucide-react';
+import { Youtube, Instagram, Facebook, Play, Eye, Calendar, Sparkles, ChevronDown, Search, X, RefreshCw } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
 import { recordMediaClick, getLocalMediaClicks, incrementCounter } from '../utils/metrics';
 import { filterMediaItems } from '../utils/mediaSearch';
 import VideoPlayerModal from './VideoPlayerModal';
+import {
+  fetchDynamicYouTubeVideos,
+  getInitialDynamicVideos,
+  mergeMediaChronological
+} from '../utils/dynamicYoutube';
 
 export default function LatestPostsSection() {
   const siteConfig = useSiteConfig();
@@ -15,6 +20,53 @@ export default function LatestPostsSection() {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clickCounts, setClickCounts] = useState(() => getLocalMediaClicks());
+
+  // Dynamic YouTube: start with bundled+cached videos immediately, then fetch live
+  const bundledVideos = siteConfig.videos || [];
+  const [dynamicVideos, setDynamicVideos] = useState(() => getInitialDynamicVideos(bundledVideos));
+  const [isFetchingYT, setIsFetchingYT] = useState(false);
+  const [lastYTSync, setLastYTSync] = useState(null);
+
+  // Fetch live videos from YouTube RSS on mount and whenever the page is revisited
+  const loadDynamicVideos = useCallback(async (silent = true) => {
+    if (!silent) setIsFetchingYT(true);
+    try {
+      const freshVideos = await fetchDynamicYouTubeVideos(bundledVideos);
+      if (freshVideos && freshVideos.length > 0) {
+        setDynamicVideos(freshVideos);
+        setLastYTSync(new Date());
+      }
+    } catch (err) {
+      // Silently fail — bundled+cached videos remain visible
+      console.warn('[LatestPostsSection] Dynamic YT fetch error:', err.message);
+    } finally {
+      if (!silent) setIsFetchingYT(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-fetch on mount (silent background refresh)
+  useEffect(() => {
+    loadDynamicVideos(true);
+  }, [loadDynamicVideos]);
+
+  // Listen for ms_videos_updated custom event (fired by dynamicYoutube.js after caching)
+  useEffect(() => {
+    const handleVideosUpdated = (e) => {
+      if (e.detail && Array.isArray(e.detail) && e.detail.length > 0) {
+        setDynamicVideos(prev => mergeMediaChronological(prev, e.detail));
+        setLastYTSync(new Date());
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ms_videos_updated', handleVideosUpdated);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ms_videos_updated', handleVideosUpdated);
+      }
+    };
+  }, []);
 
   // Keep on-site media click counts in sync in real time across the page
   useEffect(() => {
@@ -33,15 +85,15 @@ export default function LatestPostsSection() {
     };
   }, []);
 
-  // Combine YouTube videos & shorts with any standalone social posts
-  const rawVideos = siteConfig.videos || [];
+  // Use dynamic (live-fetched) videos merged with bundled if available
+  const rawVideos = dynamicVideos.length > 0 ? dynamicVideos : bundledVideos;
   const rawPosts = siteConfig.latestPosts || [];
 
   // Filter out duplicate YouTube entries from posts if they exist in videos
   const socialPosts = rawPosts.filter(p => p.platform?.toLowerCase() !== 'youtube');
 
   // Unified items list with strict chronological sorting (newest first).
-  // Includes both automatically synced YouTube media and custom-uploaded media from MS Studio.
+  // rawVideos already includes dynamically fetched live YouTube videos merged with the bundled list.
   const allMediaItems = useMemo(() => {
     return [
       ...rawVideos.map(v => ({
@@ -89,18 +141,41 @@ export default function LatestPostsSection() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-2xl"
           >
-            <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-2 sm:mb-3 font-semibold">
-              OFFICIAL MEDIA & SOCIAL FEEDS
-            </span>
+            <div className="flex items-center flex-wrap gap-2 mb-2 sm:mb-3">
+              <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 font-semibold">
+                OFFICIAL MEDIA &amp; SOCIAL FEEDS
+              </span>
+              {/* Live feed indicator */}
+              <span className="inline-flex items-center gap-1.5 bg-green-500/15 border border-green-500/30 text-green-400 px-2 py-0.5 rounded-full text-[9px] font-mono tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block"></span>
+                LIVE
+              </span>
+              {/* Manual refresh button */}
+              <button
+                type="button"
+                onClick={() => loadDynamicVideos(false)}
+                disabled={isFetchingYT}
+                title="Refresh videos from YouTube"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-white/10 hover:border-amber-400/40 text-zinc-500 hover:text-amber-400 text-[9px] font-mono transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <RefreshCw className={`w-2.5 h-2.5 ${isFetchingYT ? 'animate-spin' : ''}`} />
+                {isFetchingYT ? 'Syncing…' : 'Refresh'}
+              </button>
+              {lastYTSync && (
+                <span className="text-[9px] font-mono text-zinc-600">
+                  Synced {lastYTSync.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
             <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
-              Latest Videos, Shorts & Posts
+              Latest Videos, Shorts &amp; Posts
             </h2>
             <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
-              Explore authentic concert videos, viral YouTube Shorts, and devotional recitals from{' '}
-              <a 
-                href="https://www.youtube.com/@muralidharshenoykochi" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              Auto-synced directly from YouTube — every upload appears here on page load. From{' '}
+              <a
+                href="https://www.youtube.com/@muralidharshenoykochi"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-amber-400 hover:underline font-mono"
               >
                 @muralidharshenoykochi
