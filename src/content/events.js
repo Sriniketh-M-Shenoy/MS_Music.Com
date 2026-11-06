@@ -24,5 +24,18 @@ export const eventsContent = [
     category: "Public Concert",
     ticketed: false,
     ticketUrl: ""
+  },
+  {
+    id: 1793950528634,
+    title: "test 2",
+    date: "2026-12-21",
+    formattedDate: "DEC 21 2026",
+    time: "6:30 PM IST",
+    venue: "Auditorium Hall",
+    city: "Bengaluru",
+    status: "Available",
+    category: "Public Concert",
+    ticketed: false,
+    ticketUrl: ""
   }
 ];

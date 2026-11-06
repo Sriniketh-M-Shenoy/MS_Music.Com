@@ -8,3 +8,17 @@ release
 MS Music Studio.app
 studio/git-config.json
 install/
+public/uploads/*.mp4
+public/uploads/*.MP4
+public/uploads/*.mov
+public/uploads/*.MOV
+public/uploads/*.webm
+public/uploads/*.mkv
+public/uploads/*.avi
+uploads/*.mp4
+uploads/*.MP4
+uploads/*.mov
+uploads/*.MOV
+uploads/*.webm
+uploads/*.mkv
+uploads/*.avi

@@ -157,7 +157,7 @@ export default function StudioApp({ onCloseStudio }) {
 
   // YouTube Videos & Media State
   const [isSyncingYouTube, setIsSyncingYouTube] = useState(false);
-  const [videoSourceMode, setVideoSourceMode] = useState('device'); // 'device' | 'youtube'
+  const [videoSourceMode, setVideoSourceMode] = useState('youtube'); // 'youtube' (default) | 'device'
   const [newVideoInput, setNewVideoInput] = useState({
     title: '',
     url: '',
@@ -1793,20 +1793,8 @@ export default function StudioApp({ onCloseStudio }) {
                         <span>Add New Video or YouTube Short</span>
                       </div>
 
-                      {/* Source Toggle Tabs: Device File vs YouTube */}
+                      {/* Source Toggle Tabs: YouTube (Default) vs Device File */}
                       <div className="inline-flex p-1 bg-zinc-950 border border-zinc-800 rounded-xl gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setVideoSourceMode('device')}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                            videoSourceMode === 'device'
-                              ? 'bg-amber-500 text-black shadow-md'
-                              : 'text-zinc-400 hover:text-white'
-                          }`}
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Browse Device File</span>
-                        </button>
                         <button
                           type="button"
                           onClick={() => setVideoSourceMode('youtube')}
@@ -1818,6 +1806,18 @@ export default function StudioApp({ onCloseStudio }) {
                         >
                           <Youtube className="w-3.5 h-3.5" />
                           <span>YouTube URL / ID</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setVideoSourceMode('device')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            videoSourceMode === 'device'
+                              ? 'bg-amber-500 text-black shadow-md'
+                              : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Browse Device File</span>
                         </button>
                       </div>
                     </div>
