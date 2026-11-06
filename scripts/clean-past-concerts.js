@@ -22,17 +22,24 @@ function loadEvents() {
   const arrayText = match[1];
   // eslint-disable-next-line no-eval
   const events = eval(arrayText);
-  return { raw, events };
+
+  const notifMatch = raw.match(/export const concertNotificationsConfig = (\{[\s\S]*?\});/);
+  const notifsText = notifMatch ? notifMatch[1] : null;
+
+  return { raw, events, notifsText };
 }
 
-function saveEvents(events) {
+function saveEvents(events, notifsText) {
   const newArrayText = JSON.stringify(events, null, 2).replace(/"([a-zA-Z0-9_]+)":/g, '$1:');
-  const fileContent = `export const eventsContent = ${newArrayText};\n`;
+  let fileContent = `export const eventsContent = ${newArrayText};\n\n`;
+  if (notifsText) {
+    fileContent += `export const concertNotificationsConfig = ${notifsText};\n`;
+  }
   fs.writeFileSync(eventsPath, fileContent, 'utf-8');
 }
 
 export function cleanPastConcerts() {
-  const { events } = loadEvents();
+  const { events, notifsText } = loadEvents();
   const initialCount = events.length;
   const filtered = sortConcertsAscending(filterUpcomingConcerts(events));
 
@@ -41,7 +48,7 @@ export function cleanPastConcerts() {
     return { pruned: 0, retained: initialCount, events: filtered };
   }
 
-  saveEvents(filtered);
+  saveEvents(filtered, notifsText);
   console.log(`[Clean Concerts] Successfully pruned ${initialCount - filtered.length} past concert(s). ${filtered.length} upcoming concert(s) retained.`);
   return { pruned: initialCount - filtered.length, retained: filtered.length, events: filtered };
 }

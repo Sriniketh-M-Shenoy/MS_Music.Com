@@ -331,8 +331,32 @@ function isUpcomingConcert(event) {
   return true;
 }
 
-function generateEventsJs(data) {
-  const upcomingOnly = Array.isArray(data) ? data.filter(isUpcomingConcert) : [];
+function generateEventsJs(data, notifData) {
+  let eventsList = [];
+  let notifs = {
+    enabled: true,
+    buttonText: "Get Concert Notifications & Tour Updates",
+    badgeText: "Concert Alerts",
+    title: "Never Miss a Live Concert",
+    description: "Sign up to receive email notifications and instant tour updates when Muralidhar Shenoy announces new live concerts, acoustic evenings, and ticket releases in your city.",
+    formUrl: "https://docs.google.com/forms/d/1aPQuJo05sngxlWQL2jdZh_FUOQd6qDHIGW2F3NeB8dI/preview",
+    directFormUrl: "https://docs.google.com/forms/d/1aPQuJo05sngxlWQL2jdZh_FUOQd6qDHIGW2F3NeB8dI/viewform"
+  };
+
+  if (Array.isArray(data)) {
+    eventsList = data;
+  } else if (data && typeof data === 'object') {
+    eventsList = Array.isArray(data.events) ? data.events : (Array.isArray(data.items) ? data.items : []);
+    if (data.notifications || data.concertNotifications) {
+      notifs = { ...notifs, ...(data.notifications || data.concertNotifications) };
+    }
+  }
+
+  if (notifData && typeof notifData === 'object') {
+    notifs = { ...notifs, ...notifData };
+  }
+
+  const upcomingOnly = eventsList.filter(isUpcomingConcert);
   const itemsCode = upcomingOnly.map((item, index) => `  {
     id: ${item.id || index + 1},
     title: ${JSON.stringify(item.title || "")},
@@ -347,7 +371,17 @@ function generateEventsJs(data) {
     ticketUrl: ${JSON.stringify(item.ticketUrl || "")}
   }`).join(',\n');
 
-  return `export const eventsContent = [\n${itemsCode}\n];`;
+  const notifsCode = `export const concertNotificationsConfig = {
+  enabled: ${Boolean(notifs.enabled !== false)},
+  buttonText: ${JSON.stringify(notifs.buttonText || "Get Concert Notifications & Tour Updates")},
+  badgeText: ${JSON.stringify(notifs.badgeText || "Concert Alerts")},
+  title: ${JSON.stringify(notifs.title || "Never Miss a Live Concert")},
+  description: ${JSON.stringify(notifs.description || "Sign up to receive email notifications and instant tour updates when Muralidhar Shenoy announces new live concerts, acoustic evenings, and ticket releases in your city.")},
+  formUrl: ${JSON.stringify(notifs.formUrl || "https://docs.google.com/forms/d/1aPQuJo05sngxlWQL2jdZh_FUOQd6qDHIGW2F3NeB8dI/preview")},
+  directFormUrl: ${JSON.stringify(notifs.directFormUrl || (notifs.formUrl ? notifs.formUrl.replace('/preview', '/viewform') : "https://docs.google.com/forms/d/1aPQuJo05sngxlWQL2jdZh_FUOQd6qDHIGW2F3NeB8dI/viewform"))}
+};`;
+
+  return `export const eventsContent = [\n${itemsCode}\n];\n\n${notifsCode}\n`;
 }
 
 function generateGalleryJs(data) {
@@ -1015,7 +1049,7 @@ const server = http.createServer(async (req, res) => {
       if (body.about) fs.writeFileSync(path.join(CONTENT_DIR, 'about.js'), generateAboutJs(body.about));
       if (body.socials) fs.writeFileSync(path.join(CONTENT_DIR, 'socials.js'), generateSocialsJs(body.socials));
       if (body.audio) fs.writeFileSync(path.join(CONTENT_DIR, 'audio.js'), generateAudioJs(body.audio));
-      if (body.events) fs.writeFileSync(path.join(CONTENT_DIR, 'events.js'), generateEventsJs(body.events));
+      if (body.events || body.concertNotifications) fs.writeFileSync(path.join(CONTENT_DIR, 'events.js'), generateEventsJs(body.events, body.concertNotifications));
       if (body.gallery) fs.writeFileSync(path.join(CONTENT_DIR, 'gallery.js'), generateGalleryJs(body.gallery));
       if (body.posts) fs.writeFileSync(path.join(CONTENT_DIR, 'posts.js'), generatePostsJs(body.posts));
       if (body.videos) fs.writeFileSync(path.join(CONTENT_DIR, 'videos.js'), generateVideosJs(body.videos));

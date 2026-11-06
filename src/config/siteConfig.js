@@ -22,6 +22,7 @@ import {
   latestPostsContent,
   audioTracksContent,
   eventsContent,
+  concertNotificationsConfig,
   galleryContent,
   testimonialsContent,
   faqsContent,
@@ -63,6 +64,7 @@ export const siteConfig = {
 
   // 6. EVENTS & CONCERT SCHEDULE (from src/content/events.js)
   events: eventsContent,
+  concertNotifications: concertNotificationsConfig,
 
   // 7. PHOTO GALLERY (from src/content/gallery.js)
   gallery: galleryContent,

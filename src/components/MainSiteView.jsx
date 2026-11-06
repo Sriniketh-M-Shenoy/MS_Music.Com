@@ -91,6 +91,7 @@ export default function MainSiteView({ customSectionConfig, customContent }) {
       },
       audioTracks: effectiveContent.audio || defaultSiteConfig.audioTracks,
       events: effectiveContent.events || defaultSiteConfig.events,
+      concertNotifications: effectiveContent.concertNotifications || defaultSiteConfig.concertNotifications,
       gallery: effectiveContent.gallery || defaultSiteConfig.gallery,
       testimonials: effectiveContent.testimonials || defaultSiteConfig.testimonials,
       faqs: effectiveContent.faqs || defaultSiteConfig.faqs

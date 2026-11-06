@@ -3,7 +3,7 @@ import { aboutContent } from './about';
 import { socialsContent } from './socials';
 import { latestPostsContent } from './posts';
 import { audioTracksContent } from './audio';
-import { eventsContent } from './events';
+import { eventsContent, concertNotificationsConfig } from './events';
 import { galleryContent } from './gallery';
 import { testimonialsContent } from './testimonials';
 import { faqsContent } from './faqs';
@@ -17,6 +17,7 @@ export {
   latestPostsContent,
   audioTracksContent,
   eventsContent,
+  concertNotificationsConfig,
   galleryContent,
   testimonialsContent,
   faqsContent,

@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, ChevronRight, MapPin, Clock, Tag, Ticket, ExternalLink, Star } from 'lucide-react';
+import { Calendar, ChevronRight, MapPin, Clock, Tag, Ticket, ExternalLink, Star, Bell } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { incrementCounter, getCounterValue, sanitizeCounterId } from '../utils/metrics';
 import { filterUpcomingConcerts, sortConcertsAscending } from '../utils/concerts';
+import ConcertNotificationsModal from './ConcertNotificationsModal';
 
 export default function EventSchedule({ onOpenBooking }) {
   const siteConfig = useSiteConfig();
   const rawEvents = siteConfig.events || [];
+  const notificationsConfig = siteConfig.concertNotifications || {
+    enabled: true,
+    buttonText: "Get Concert Notifications & Tour Updates",
+    badgeText: "Concert Alerts",
+    title: "Never Miss a Live Concert",
+    description: "Sign up to receive email notifications and instant tour updates when Muralidhar Shenoy announces new live concerts, acoustic evenings, and ticket releases in your city.",
+    formUrl: "https://docs.google.com/forms/d/1aPQuJo05sngxlWQL2jdZh_FUOQd6qDHIGW2F3NeB8dI/preview"
+  };
+
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
 
   // Automatically exclude past concerts and sort ascending (earliest upcoming date first)
   const sortedEvents = sortConcertsAscending(filterUpcomingConcerts(rawEvents));
@@ -75,23 +86,46 @@ export default function EventSchedule({ onOpenBooking }) {
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
         
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-3xl mb-10 sm:mb-16"
-        >
-          <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-2 sm:mb-3 font-semibold">
-            PERFORMANCE CALENDAR
-          </span>
-          <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
-            {siteConfig.sectionConfig?.find(s => s.id === 'events')?.name || "Upcoming concerts & tour dates."}
-          </h2>
-          <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
-            Stay tuned for upcoming live concerts, devotional recitals, and tour schedule announcements. Sorted by earliest upcoming date.
-          </p>
-        </motion.div>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-2xl"
+          >
+            <span className="text-[11px] font-mono tracking-[0.2em] uppercase text-amber-400 block mb-2 sm:mb-3 font-semibold">
+              PERFORMANCE CALENDAR
+            </span>
+            <h2 className="font-sans text-3xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+              {siteConfig.sectionConfig?.find(s => s.id === 'events')?.name || "Upcoming concerts & tour dates."}
+            </h2>
+            <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
+              Stay tuned for upcoming live concerts, devotional recitals, and tour schedule announcements. Sorted by earliest upcoming date.
+            </p>
+          </motion.div>
+
+          {notificationsConfig?.enabled !== false && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="shrink-0"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  incrementCounter('concert_notifications_button_clicks');
+                  setIsNotificationsModalOpen(true);
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-extrabold text-xs sm:text-sm py-3 px-5 rounded-2xl shadow-lg shadow-amber-500/20 transition-all cursor-pointer group"
+              >
+                <Bell className="w-4 h-4 transition-transform group-hover:rotate-12" />
+                <span>{notificationsConfig?.buttonText || "Get Concert Notifications & Tour Updates"}</span>
+              </button>
+            </motion.div>
+          )}
+        </div>
 
         {sortedEvents.length > 0 ? (
           <div className="space-y-4">
@@ -254,7 +288,57 @@ export default function EventSchedule({ onOpenBooking }) {
           </motion.div>
         )}
 
+        {/* Concert Notifications Banner Card */}
+        {notificationsConfig?.enabled !== false && (
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10 sm:mt-14 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-amber-500/10 via-zinc-900/90 to-black border border-amber-500/25 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden"
+          >
+            {/* Ambient gold glow */}
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex items-start sm:items-center gap-4 relative z-10">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0 shadow-inner">
+                <Bell className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-400 font-bold block mb-1">
+                  {notificationsConfig?.badgeText || 'CONCERT ALERTS'}
+                </span>
+                <h3 className="text-lg sm:text-2xl font-extrabold text-white tracking-tight">
+                  {notificationsConfig?.title || 'Never Miss a Live Concert'}
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 max-w-xl mt-1 leading-relaxed">
+                  {notificationsConfig?.description || 'Sign up to receive email notifications and instant tour updates when Muralidhar Shenoy announces new live concerts, acoustic evenings, and ticket releases in your city.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                incrementCounter('concert_notifications_banner_clicks');
+                setIsNotificationsModalOpen(true);
+              }}
+              className="relative z-10 inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-extrabold text-xs sm:text-sm py-3.5 px-6 rounded-2xl shadow-xl shadow-amber-500/25 transition-all cursor-pointer shrink-0"
+            >
+              <Bell className="w-4 h-4" />
+              <span>{notificationsConfig?.buttonText || "Get Concert Notifications & Tour Updates"}</span>
+            </button>
+          </motion.div>
+        )}
+
       </div>
+
+      {/* Interactive Concert Notifications Google Form Popup Modal */}
+      <ConcertNotificationsModal
+        isOpen={isNotificationsModalOpen}
+        onClose={() => setIsNotificationsModalOpen(false)}
+        config={notificationsConfig}
+      />
     </section>
   );
 }

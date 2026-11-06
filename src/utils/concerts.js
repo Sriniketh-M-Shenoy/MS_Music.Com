@@ -6,6 +6,24 @@
 
 const MONTH_NAMES = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
+export function formatConcertFormEmbedUrl(url) {
+  if (!url) {
+    return 'https://docs.google.com/forms/d/1aPQuJo05sngxlWQL2jdZh_FUOQd6qDHIGW2F3NeB8dI/viewform?embedded=true';
+  }
+  const trimmed = String(url).trim();
+  if (trimmed.includes('embedded=true')) return trimmed;
+  if (trimmed.includes('/preview')) {
+    return trimmed.replace(/\/preview(\?.*)?$/, '/viewform?embedded=true');
+  }
+  if (trimmed.includes('/viewform')) {
+    return trimmed.replace(/\/viewform(\?.*)?$/, '/viewform?embedded=true');
+  }
+  if (trimmed.startsWith('https://docs.google.com/forms/d/')) {
+    return `${trimmed.replace(/\/+$/, '')}/viewform?embedded=true`;
+  }
+  return trimmed;
+}
+
 export function formatConcertDate(dateInput) {
   if (!dateInput) return '';
   const d = parseConcertDate(dateInput);
