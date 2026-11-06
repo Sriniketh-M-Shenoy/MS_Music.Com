@@ -56,7 +56,16 @@ export default function StudioApp({ onCloseStudio }) {
   // State data
   const [hero, setHero] = useState(() => getInitialDraft('hero', initialHero));
   const [about, setAbout] = useState(() => getInitialDraft('about', initialAbout));
-  const [socials, setSocials] = useState(() => getInitialDraft('socials', initialSocials));
+  const [socials, setSocials] = useState(() => {
+    const s = getInitialDraft('socials', initialSocials) || {};
+    if (!s.youtube || s.youtube.includes('muralidhargshenoykochi')) {
+      s.youtube = 'https://www.youtube.com/@muralidharshenoykochi';
+    }
+    if (!s.youtubeHandle || s.youtubeHandle.includes('muralidhargshenoykochi')) {
+      s.youtubeHandle = '@muralidharshenoykochi';
+    }
+    return s;
+  });
   const [posts, setPosts] = useState(() => getInitialDraft('posts', initialPosts));
   const [videos, setVideos] = useState(() => getInitialDraft('videos', initialVideos || []));
   const [audio, setAudio] = useState(() => getInitialDraft('audio', initialAudio));

@@ -3,6 +3,7 @@ import { Instagram, Facebook, Youtube, ArrowUp } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { useTheme } from '../utils/theme';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
+import { incrementCounter } from '../utils/metrics';
 
 export default function Footer() {
   const siteConfig = useSiteConfig();
@@ -13,6 +14,11 @@ export default function Footer() {
   };
 
   const activeSignature = signatureSrc || resolveImageSrc(siteConfig.artist.signatureImage);
+
+  const rawYoutube = siteConfig.socials?.youtube || '';
+  const youtubeUrl = rawYoutube.includes('muralidhargshenoykochi') || !rawYoutube.trim()
+    ? 'https://www.youtube.com/@muralidharshenoykochi'
+    : rawYoutube;
 
   return (
     <footer className="bg-black border-t border-white/10 pt-12 sm:pt-20 pb-8 sm:pb-12 relative">
@@ -32,39 +38,40 @@ export default function Footer() {
             </p>
 
             <div className="flex items-center gap-3 pt-2">
-              {siteConfig.socials.instagram && (
+              {siteConfig.socials?.instagram && (
                 <a
                   href={siteConfig.socials.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => incrementCounter('social_clicks_instagram')}
                   className="w-9 h-9 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 transition-colors"
                   title="Instagram"
                 >
                   <Instagram className="w-4 h-4" />
                 </a>
               )}
-              {siteConfig.socials.facebook && (
+              {siteConfig.socials?.facebook && (
                 <a
                   href={siteConfig.socials.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => incrementCounter('social_clicks_facebook')}
                   className="w-9 h-9 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 transition-colors"
                   title="Facebook"
                 >
                   <Facebook className="w-4 h-4" />
                 </a>
               )}
-              {siteConfig.socials.youtube && (
-                <a
-                  href={siteConfig.socials.youtube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 transition-colors"
-                  title="YouTube"
-                >
-                  <Youtube className="w-4 h-4" />
-                </a>
-              )}
+              <a
+                href={youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => incrementCounter('social_clicks_youtube')}
+                className="w-9 h-9 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 transition-colors"
+                title="YouTube Channel"
+              >
+                <Youtube className="w-4 h-4" />
+              </a>
             </div>
           </div>
 

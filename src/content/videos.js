@@ -7,7 +7,7 @@ export const videosContent = [
     "type": "Video",
     "platform": "YouTube",
     "date": "2026-11-05",
-    "views": "689 views",
+    "views": "699 views",
     "timeAgo": "17h ago",
     "url": "https://www.youtube.com/watch?v=eP7v-PhzJm4",
     "thumbnail": "https://i.ytimg.com/vi/eP7v-PhzJm4/hqdefault.jpg",

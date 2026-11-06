@@ -291,12 +291,16 @@ export const aboutContent = {
 function generateSocialsJs(data) {
   const isGoogleFormEnabled = data.googleFormEnabled === true || data.googleFormEnabled === 'true' || data.googleFormEnabled === undefined;
   const isEmailFormEnabled = data.emailFormEnabled !== false && data.emailFormEnabled !== 'false';
+  let yt = data.youtube || "https://www.youtube.com/@muralidharshenoykochi";
+  if (yt.includes("muralidhargshenoykochi")) yt = "https://www.youtube.com/@muralidharshenoykochi";
+  let ytSub = data.youtubeSubscribe || "https://www.youtube.com/@muralidharshenoykochi?sub_confirmation=1";
+  if (ytSub.includes("muralidhargshenoykochi")) ytSub = "https://www.youtube.com/@muralidharshenoykochi?sub_confirmation=1";
 
   return `export const socialsContent = {
   spotify: ${JSON.stringify(data.spotify || "")},
   instagram: ${JSON.stringify(data.instagram || "")},
-  youtube: ${JSON.stringify(data.youtube || "")},
-  youtubeSubscribe: ${JSON.stringify(data.youtubeSubscribe || "")},
+  youtube: ${JSON.stringify(yt)},
+  youtubeSubscribe: ${JSON.stringify(ytSub)},
   facebook: ${JSON.stringify(data.facebook || "")},
   email: ${JSON.stringify(data.email || "")},
   youtubeHandle: ${JSON.stringify(data.youtubeHandle || "@muralidharshenoykochi")},

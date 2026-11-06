@@ -7,6 +7,11 @@ import { incrementCounter } from '../utils/metrics';
 export default function SocialsSection() {
   const siteConfig = useSiteConfig();
 
+  const rawYoutube = siteConfig.socials?.youtube || '';
+  const youtubeUrl = rawYoutube.includes('muralidhargshenoykochi') || !rawYoutube.trim()
+    ? 'https://www.youtube.com/@muralidharshenoykochi'
+    : rawYoutube;
+
   return (
     <section id="socials" className="py-16 sm:py-24 lg:py-32 relative bg-black border-t border-white/10">
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-12">
@@ -113,7 +118,7 @@ export default function SocialsSection() {
             <motion.a
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              href={siteConfig.socials.youtube}
+              href={youtubeUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => incrementCounter('social_clicks_youtube')}
