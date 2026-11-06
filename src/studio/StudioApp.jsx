@@ -67,7 +67,15 @@ export default function StudioApp({ onCloseStudio }) {
     return s;
   });
   const [posts, setPosts] = useState(() => getInitialDraft('posts', initialPosts));
-  const [videos, setVideos] = useState(() => getInitialDraft('videos', initialVideos || []));
+  const [videos, setVideos] = useState(() => {
+    const draft = getInitialDraft('videos', null);
+    // If draft in localStorage is older/smaller than initialVideos from videos.js, use the latest initialVideos
+    if (Array.isArray(draft) && draft.length >= (initialVideos || []).length && draft.length > 0) {
+      return draft;
+    }
+    return initialVideos || [];
+  });
+  const [studioVideoSearch, setStudioVideoSearch] = useState('');
   const [audio, setAudio] = useState(() => getInitialDraft('audio', initialAudio));
   const [events, setEvents] = useState(() => filterUpcomingConcerts(getInitialDraft('events', initialEvents)));
   const [gallery, setGallery] = useState(() => getInitialDraft('gallery', initialGallery));
@@ -387,22 +395,46 @@ export default function StudioApp({ onCloseStudio }) {
   const handleSyncGitPull = async () => {
     try {
       setSyncStatus('syncing');
-      const res = await fetch(`${API_BASE}/api/git-pull`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setSyncStatus('synced');
+
+      // 1. Pull latest git remote changes
+      try {
+        const res = await fetch(`${API_BASE}/api/git-pull`);
+        if (res.ok) {
           fetchGitStatus();
           fetchGitHistory();
-          setTimeout(() => setSyncStatus(''), 4000);
-        } else {
-          setSyncStatus('');
         }
-      } else {
-        setSyncStatus('');
+      } catch (gitErr) {
+        console.warn('Git pull warning during global sync:', gitErr.message);
       }
+
+      // 2. Automatically sync latest YouTube videos & shorts from @muralidharshenoykochi
+      try {
+        const ytRes = await fetch(`${API_BASE}/api/sync-youtube`, { method: 'POST' });
+        if (ytRes.ok) {
+          const ytData = await ytRes.json();
+          if (ytData.success && Array.isArray(ytData.videos) && ytData.videos.length > 0) {
+            setVideos(ytData.videos);
+            // Save to draft so it persists across refreshes
+            try {
+              const draft = JSON.parse(localStorage.getItem('ms_studio_draft') || '{}');
+              draft.videos = ytData.videos;
+              localStorage.setItem('ms_studio_draft', JSON.stringify(draft));
+            } catch (e) {}
+          }
+        }
+      } catch (ytErr) {
+        console.warn('YouTube sync warning during global sync:', ytErr.message);
+      }
+
+      // 3. Clean past concerts
+      try {
+        await fetch(`${API_BASE}/api/clean-past-concerts`, { method: 'POST' });
+      } catch (cErr) {}
+
+      setSyncStatus('synced');
+      setTimeout(() => setSyncStatus(''), 4000);
     } catch (err) {
-      console.warn('Auto-pull fetch failed:', err.message);
+      console.warn('Global sync failed:', err.message);
       setSyncStatus('');
     }
   };
@@ -490,6 +522,11 @@ export default function StudioApp({ onCloseStudio }) {
       const data = await res.json();
       if (data.success && data.videos) {
         setVideos(data.videos);
+        try {
+          const draft = JSON.parse(localStorage.getItem('ms_studio_draft') || '{}');
+          draft.videos = data.videos;
+          localStorage.setItem('ms_studio_draft', JSON.stringify(draft));
+        } catch (e) {}
         markDirty();
         alert(`Successfully synced ${data.count} videos & shorts from YouTube channel @muralidharshenoykochi!`);
       } else {
@@ -880,15 +917,15 @@ export default function StudioApp({ onCloseStudio }) {
             </span>
           )}
 
-          {/* Sync Remote Button */}
+          {/* Sync Remote & YouTube Button */}
           <button
             onClick={handleSyncGitPull}
             disabled={syncStatus === 'syncing'}
-            title="Pull latest website changes from GitHub"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 transition-all disabled:opacity-50"
+            title="Pull latest website changes from GitHub & auto-sync newest YouTube videos and shorts"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/80 transition-all disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Sync Latest</span>
+            <span className="hidden sm:inline">{syncStatus === 'syncing' ? 'Syncing (Git & YouTube)...' : 'Sync Latest'}</span>
           </button>
 
           {/* Quick Save Button */}
@@ -1761,20 +1798,54 @@ export default function StudioApp({ onCloseStudio }) {
 
                   {/* List of Configured Videos */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>Configured Videos & Shorts</span>
-                        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/10 text-amber-400">
-                          {videos.length} items
-                        </span>
-                      </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                          <span>Configured Videos & Shorts</span>
+                          <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/10 text-amber-400">
+                            {videos.length} items
+                          </span>
+                        </h3>
+                        {studioVideoSearch && (
+                          <span className="text-xs text-zinc-400">
+                            ({videos.filter(v => (v.title || '').toLowerCase().includes(studioVideoSearch.toLowerCase()) || (v.type || '').toLowerCase().includes(studioVideoSearch.toLowerCase())).length} matched)
+                          </span>
+                        )}
+                      </div>
                       <span className="text-[11px] font-mono text-zinc-400">
-                        Sorted date order: Newest &rarr; Oldest
+                        Chronologically sorted: Newest &rarr; Oldest
                       </span>
                     </div>
 
-                    <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
-                      {videos.slice(0, 30).map((vid, idx) => (
+                    {/* Studio Video Search Input */}
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={studioVideoSearch}
+                        onChange={e => setStudioVideoSearch(e.target.value)}
+                        placeholder="Search configured videos or shorts by title..."
+                        className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500/50 rounded-xl pl-9 pr-8 py-2 text-xs text-white outline-none transition-all placeholder:text-zinc-600"
+                      />
+                      {studioVideoSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setStudioVideoSearch('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white p-0.5 rounded"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-[500px] overflow-y-auto space-y-2 pr-1">
+                      {videos
+                        .filter(v => {
+                          if (!studioVideoSearch.trim()) return true;
+                          const q = studioVideoSearch.trim().toLowerCase();
+                          return (v.title || '').toLowerCase().includes(q) || (v.type || '').toLowerCase().includes(q);
+                        })
+                        .map((vid, idx) => (
                         <div
                           key={vid.id || vid.videoId || idx}
                           className="bg-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-xl p-3 flex items-center justify-between gap-3 text-xs"

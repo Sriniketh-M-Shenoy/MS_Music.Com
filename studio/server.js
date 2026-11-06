@@ -684,9 +684,28 @@ const server = http.createServer(async (req, res) => {
     // 0. GET /api/git-pull
     if (pathname === '/api/git-pull' && req.method === 'GET') {
       try {
-        execSync('git pull origin main', { cwd: ROOT_DIR });
+        const pullCmd = getGitPushCommand ? getGitPushCommand().replace('git push', 'git pull') : 'git pull origin main';
+        try {
+          execSync('git pull origin main', { cwd: ROOT_DIR });
+        } catch (gitErr) {
+          console.warn('[MS Studio API] git pull warning:', gitErr.message);
+        }
+
+        // Auto-sync YouTube videos & shorts during global pull
+        let ytVideos = [];
+        try {
+          ytVideos = await syncYouTubeChannelVideos();
+        } catch (ytErr) {
+          console.warn('[MS Studio API] YouTube sync in git-pull warning:', ytErr.message);
+        }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'Successfully pulled latest changes' }));
+        res.end(JSON.stringify({ 
+          success: true, 
+          message: 'Successfully pulled latest changes and synced YouTube channel',
+          count: ytVideos.length,
+          videos: ytVideos
+        }));
       } catch (pullErr) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: pullErr.message }));
