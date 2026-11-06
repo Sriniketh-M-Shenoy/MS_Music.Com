@@ -1,0 +1,41 @@
+name: Sync YouTube Media Daily
+
+on:
+  schedule:
+    # Run twice daily (06:00 and 18:00 UTC) to fetch any newly uploaded videos or shorts
+    - cron: '0 6,18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Sync YouTube videos and shorts
+        run: node scripts/sync-youtube.js
+
+      - name: Commit and push changes if any
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -n $(git status --porcelain src/content/videos.js) ]]; then
+            git add src/content/videos.js
+            git commit -m "Auto: Synced latest YouTube videos & shorts from @muralidharshenoykochi"
+            git push
+          else
+            echo "No new YouTube videos or shorts found."
+          fi

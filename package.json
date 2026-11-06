@@ -9,7 +9,7 @@
     "server": "node studio/server.cjs",
     "app": "electron .",
     "studio": "npm run app",
-    "build": "vite build",
+    "build": "node scripts/sync-youtube.js && vite build",
     "build:mac": "npm run build && electron-builder --mac dmg && rm -rf \"./MS Music Studio.app\" && cp -R \"release/mac-arm64/MS Music Studio.app\" ./ && xattr -cr \"./MS Music Studio.app\"",
     "build:win": "npm run build && electron-builder --win portable",
     "preview": "vite preview",

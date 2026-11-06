@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Youtube, Instagram, Facebook, Play, Eye, Calendar, Sparkles, ChevronDown } from 'lucide-react';
+import { Youtube, Instagram, Facebook, Play, Eye, Calendar, Sparkles, ChevronDown, Search, X } from 'lucide-react';
 import { useSiteConfig } from '../config/siteConfig';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
 import { recordMediaClick, getLocalMediaClicks, incrementCounter } from '../utils/metrics';
@@ -9,6 +9,7 @@ import VideoPlayerModal from './VideoPlayerModal';
 export default function LatestPostsSection() {
   const siteConfig = useSiteConfig();
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'videos' | 'shorts' | 'socials'
+  const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(6);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,27 +39,43 @@ export default function LatestPostsSection() {
   // Filter out duplicate YouTube entries from posts if they exist in videos
   const socialPosts = rawPosts.filter(p => p.platform?.toLowerCase() !== 'youtube');
 
-  // Unified items list with sorting by date (newest first)
-  const allMediaItems = [
-    ...rawVideos.map(v => ({
-      ...v,
-      isYouTube: true,
-      platform: 'YouTube'
-    })),
-    ...socialPosts.map(p => ({
-      ...p,
-      isYouTube: false,
-      date: p.date || '2026-10-01'
-    }))
-  ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  // Unified items list with strict chronological sorting (newest first).
+  // Includes both automatically synced YouTube media and custom-uploaded media from MS Studio.
+  const allMediaItems = useMemo(() => {
+    return [
+      ...rawVideos.map(v => ({
+        ...v,
+        isYouTube: true,
+        platform: 'YouTube'
+      })),
+      ...socialPosts.map(p => ({
+        ...p,
+        isYouTube: false,
+        date: p.date || '2026-10-01'
+      }))
+    ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  }, [rawVideos, rawPosts]);
 
-  // Apply active category filter
-  const filteredItems = allMediaItems.filter(item => {
-    if (activeFilter === 'videos') return item.isYouTube && item.type === 'Video';
-    if (activeFilter === 'shorts') return item.isYouTube && item.type === 'Short';
-    if (activeFilter === 'socials') return !item.isYouTube;
-    return true; // 'all'
-  });
+  // Apply active category filter + search query filtering
+  const filteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return allMediaItems.filter(item => {
+      // 1. Tab category filter
+      if (activeFilter === 'videos' && (!item.isYouTube || item.type !== 'Video')) return false;
+      if (activeFilter === 'shorts' && (!item.isYouTube || item.type !== 'Short')) return false;
+      if (activeFilter === 'socials' && item.isYouTube) return false;
+
+      // 2. Search query filter across title, description, and platform/type
+      if (query) {
+        const titleMatch = (item.title || '').toLowerCase().includes(query);
+        const descMatch = (item.description || '').toLowerCase().includes(query);
+        const typeMatch = (item.type || '').toLowerCase().includes(query);
+        const platformMatch = (item.platform || '').toLowerCase().includes(query);
+        if (!titleMatch && !descMatch && !typeMatch && !platformMatch) return false;
+      }
+      return true;
+    });
+  }, [allMediaItems, activeFilter, searchQuery]);
 
   const displayedItems = filteredItems.slice(0, visibleCount);
 
@@ -107,46 +124,80 @@ export default function LatestPostsSection() {
             </p>
           </motion.div>
 
-          {/* Interactive Filter Pills */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-wrap items-center gap-2 shrink-0 bg-white/5 p-1.5 rounded-2xl border border-white/10"
-          >
-            {[
-              { id: 'all', label: 'All Media', count: allMediaItems.length },
-              { id: 'videos', label: 'Videos', count: allMediaItems.filter(x => x.isYouTube && x.type === 'Video').length },
-              { id: 'shorts', label: 'Shorts', count: allMediaItems.filter(x => x.isYouTube && x.type === 'Short').length },
-              { id: 'socials', label: 'Social Feeds', count: socialPosts.length }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveFilter(tab.id);
+          {/* Interactive Filter Pills & Search Box */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            {/* Search Input */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative min-w-[220px] sm:w-64"
+            >
+              <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
                   setVisibleCount(6);
                 }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeFilter === tab.id
-                    ? 'bg-amber-400 text-black shadow-md font-bold'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <span>{tab.label}</span>
-                {tab.count > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeFilter === tab.id ? 'bg-black/20 text-black' : 'bg-white/10 text-zinc-400'}`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </motion.div>
+                placeholder="Search videos & shorts..."
+                className="w-full bg-white/5 border border-white/10 hover:border-amber-400/40 focus:border-amber-400 text-white placeholder-zinc-500 rounded-2xl pl-9 pr-8 py-2 text-xs font-mono outline-none transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
+                  title="Clear search"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </motion.div>
+
+            {/* Category Filter Pills */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-wrap items-center gap-1.5 sm:gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10"
+            >
+              {[
+                { id: 'all', label: 'All Media', count: allMediaItems.length },
+                { id: 'videos', label: 'Videos', count: allMediaItems.filter(x => x.isYouTube && x.type === 'Video').length },
+                { id: 'shorts', label: 'Shorts', count: allMediaItems.filter(x => x.isYouTube && x.type === 'Short').length },
+                { id: 'socials', label: 'Socials', count: socialPosts.length }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveFilter(tab.id);
+                    setVisibleCount(6);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeFilter === tab.id
+                      ? 'bg-amber-400 text-black shadow-md font-bold'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {tab.count > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeFilter === tab.id ? 'bg-black/20 text-black' : 'bg-white/10 text-zinc-400'}`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </motion.div>
+          </div>
         </div>
 
         {/* Media Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence mode="popLayout">
-            {displayedItems.map((item, idx) => {
+            {displayedItems.length > 0 ? (
+              displayedItems.map((item, idx) => {
               const isShort = item.type === 'Short';
               const thumbnailSrc = item.thumbnail?.startsWith('http') 
                 ? item.thumbnail 
@@ -259,7 +310,23 @@ export default function LatestPostsSection() {
                   </div>
                 </motion.div>
               );
-            })}
+            })
+          ) : (
+            <div className="col-span-full py-16 text-center bg-white/[0.02] border border-white/5 rounded-3xl p-8">
+              <Search className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-white mb-1">No videos or shorts found</h3>
+              <p className="text-xs text-zinc-400 max-w-md mx-auto">
+                No media matched your search for &ldquo;{searchQuery}&rdquo;. Try another song name, raga, or clear the search.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="mt-4 px-4 py-2 bg-amber-400 text-black rounded-xl text-xs font-bold font-mono hover:bg-amber-300 transition-colors cursor-pointer"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
           </AnimatePresence>
         </div>
 
