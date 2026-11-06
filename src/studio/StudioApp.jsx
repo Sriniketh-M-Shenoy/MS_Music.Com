@@ -157,9 +157,13 @@ export default function StudioApp({ onCloseStudio }) {
 
   // YouTube Videos & Media State
   const [isSyncingYouTube, setIsSyncingYouTube] = useState(false);
+  const [videoSourceMode, setVideoSourceMode] = useState('device'); // 'device' | 'youtube'
   const [newVideoInput, setNewVideoInput] = useState({
     title: '',
     url: '',
+    videoFileUrl: '',
+    videoFileName: '',
+    thumbnailUrl: '',
     type: 'Video',
     date: new Date().toISOString().split('T')[0],
     views: '',
@@ -539,14 +543,64 @@ export default function StudioApp({ onCloseStudio }) {
     }
   };
 
-  // Add custom video / short directly through app
+  // Add custom video / short directly through app (from device or YouTube)
   const handleAddVideo = () => {
     if (!newVideoInput.title.trim()) {
       alert('Please enter a video title');
       return;
     }
+
+    if (videoSourceMode === 'device') {
+      if (!newVideoInput.videoFileUrl) {
+        alert('Please browse and select a video file from your device first.');
+        return;
+      }
+
+      const newEntry = {
+        id: `custom-device-${Date.now()}`,
+        videoId: `local-${Date.now()}`,
+        videoFileUrl: newVideoInput.videoFileUrl,
+        title: newVideoInput.title.trim(),
+        type: newVideoInput.type || 'Video',
+        platform: 'MS Music',
+        date: newVideoInput.date || new Date().toISOString().split('T')[0],
+        views: newVideoInput.views ? (newVideoInput.views.includes('view') ? newVideoInput.views : `${newVideoInput.views} views`) : 'New Release',
+        timeAgo: 'Recently Uploaded',
+        url: newVideoInput.videoFileUrl,
+        thumbnail: newVideoInput.thumbnailUrl || 'picSingingMic',
+        description: newVideoInput.description || 'Uploaded from device via MS Music Studio',
+        isCustom: true
+      };
+
+      const updated = [newEntry, ...videos].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      setVideos(updated);
+      try {
+        const draft = JSON.parse(localStorage.getItem('ms_studio_draft') || '{}');
+        draft.videos = updated;
+        localStorage.setItem('ms_studio_draft', JSON.stringify(draft));
+      } catch (e) {}
+      markDirty();
+      setNewVideoInput({
+        title: '',
+        url: '',
+        videoFileUrl: '',
+        videoFileName: '',
+        thumbnailUrl: '',
+        type: 'Video',
+        date: new Date().toISOString().split('T')[0],
+        views: '',
+        description: ''
+      });
+      alert(`Successfully added "${newEntry.title}" from device! Click "Save Changes" or "Publish to Website" when ready.`);
+      return;
+    }
+
     let vidId = '';
     const rawUrl = newVideoInput.url.trim();
+    if (!rawUrl) {
+      alert('Please enter a YouTube video URL or ID');
+      return;
+    }
     if (rawUrl.includes('v=')) {
       vidId = rawUrl.split('v=')[1].split('&')[0];
     } else if (rawUrl.includes('youtu.be/')) {
@@ -564,7 +618,7 @@ export default function StudioApp({ onCloseStudio }) {
       type: newVideoInput.type || 'Video',
       platform: 'YouTube',
       date: newVideoInput.date || new Date().toISOString().split('T')[0],
-      views: newVideoInput.views ? `${newVideoInput.views} views` : 'New Release',
+      views: newVideoInput.views ? (newVideoInput.views.includes('view') ? newVideoInput.views : `${newVideoInput.views} views`) : 'New Release',
       timeAgo: 'Recently Uploaded',
       url: rawUrl.startsWith('http') ? rawUrl : (newVideoInput.type === 'Short' ? `https://www.youtube.com/shorts/${vidId}` : `https://www.youtube.com/watch?v=${vidId}`),
       thumbnail: vidId ? `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg` : 'picSingingMic',
@@ -574,15 +628,24 @@ export default function StudioApp({ onCloseStudio }) {
 
     const updated = [newEntry, ...videos].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     setVideos(updated);
+    try {
+      const draft = JSON.parse(localStorage.getItem('ms_studio_draft') || '{}');
+      draft.videos = updated;
+      localStorage.setItem('ms_studio_draft', JSON.stringify(draft));
+    } catch (e) {}
     markDirty();
     setNewVideoInput({
       title: '',
       url: '',
+      videoFileUrl: '',
+      videoFileName: '',
+      thumbnailUrl: '',
       type: 'Video',
       date: new Date().toISOString().split('T')[0],
       views: '',
       description: ''
     });
+    alert(`Successfully added "${newEntry.title}"! Click "Save Changes" or "Publish to Website" when ready.`);
   };
 
   // Save changes to backend disk files & browser session
@@ -1724,14 +1787,153 @@ export default function StudioApp({ onCloseStudio }) {
 
                   {/* Add New Video / Short Card */}
                   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4 shadow-xl">
-                    <div className="flex items-center gap-2 text-sm font-bold text-white">
-                      <Plus className="w-4 h-4 text-amber-400" />
-                      <span>Add New Video or YouTube Short</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/80 pb-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-white">
+                        <Plus className="w-4 h-4 text-amber-400" />
+                        <span>Add New Video or YouTube Short</span>
+                      </div>
+
+                      {/* Source Toggle Tabs: Device File vs YouTube */}
+                      <div className="inline-flex p-1 bg-zinc-950 border border-zinc-800 rounded-xl gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setVideoSourceMode('device')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            videoSourceMode === 'device'
+                              ? 'bg-amber-500 text-black shadow-md'
+                              : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Browse Device File</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setVideoSourceMode('youtube')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            videoSourceMode === 'youtube'
+                              ? 'bg-red-600 text-white shadow-md'
+                              : 'text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          <Youtube className="w-3.5 h-3.5" />
+                          <span>YouTube URL / ID</span>
+                        </button>
+                      </div>
                     </div>
 
+                    {/* Mode specific file picker / URL input */}
+                    {videoSourceMode === 'device' ? (
+                      <div className="space-y-3 p-4 bg-zinc-950/60 border border-zinc-800/80 rounded-xl">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* Video file picker */}
+                          <div>
+                            <label className="block text-[11px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                              <Upload className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Select Video File from Device</span>
+                              <span className="text-amber-400 font-bold">*</span>
+                            </label>
+                            <input
+                              type="file"
+                              accept="video/mp4,video/webm,video/quicktime,video/ogg,video/*"
+                              id="device-video-file-input"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleFileUpload(file, (url) => {
+                                    setNewVideoInput(prev => ({
+                                      ...prev,
+                                      videoFileUrl: url,
+                                      videoFileName: file.name,
+                                      title: prev.title.trim() ? prev.title : file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ')
+                                    }));
+                                  });
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor="device-video-file-input"
+                              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-zinc-900 border border-dashed border-zinc-700 hover:border-amber-400 rounded-lg text-xs text-zinc-300 cursor-pointer transition-all hover:bg-zinc-850"
+                            >
+                              <span className="truncate">
+                                {newVideoInput.videoFileName ? `📁 ${newVideoInput.videoFileName}` : 'Choose video (.mp4, .mov, .webm)...'}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 shrink-0">
+                                Browse
+                              </span>
+                            </label>
+                            {newVideoInput.videoFileUrl && (
+                              <p className="text-[10px] text-emerald-400 font-mono mt-1 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                <span>Uploaded: {newVideoInput.videoFileUrl}</span>
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Thumbnail / Cover image picker (optional) */}
+                          <div>
+                            <label className="block text-[11px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                              <ImageIcon className="w-3.5 h-3.5 text-zinc-400" />
+                              <span>Custom Thumbnail / Cover Image (Optional)</span>
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              id="device-video-thumb-input"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleFileUpload(file, (url) => {
+                                    setNewVideoInput(prev => ({ ...prev, thumbnailUrl: url }));
+                                  });
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor="device-video-thumb-input"
+                              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-zinc-900 border border-dashed border-zinc-700 hover:border-amber-400 rounded-lg text-xs text-zinc-300 cursor-pointer transition-all hover:bg-zinc-850"
+                            >
+                              <span className="truncate">
+                                {newVideoInput.thumbnailUrl ? '🖼 Thumbnail image selected' : 'Choose cover image (PNG, JPG)...'}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 shrink-0">
+                                Browse
+                              </span>
+                            </label>
+                            {newVideoInput.thumbnailUrl && (
+                              <p className="text-[10px] text-emerald-400 font-mono mt-1 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                <span>Cover set: {newVideoInput.thumbnailUrl}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1 flex items-center gap-1.5">
+                          <Youtube className="w-3.5 h-3.5 text-red-500" />
+                          <span>YouTube URL or Video ID</span>
+                          <span className="text-red-500 font-bold">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="https://youtu.be/... or ID"
+                          value={newVideoInput.url}
+                          onChange={e => setNewVideoInput({ ...newVideoInput, url: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 font-mono"
+                        />
+                      </div>
+                    )}
+
+                    {/* Shared fields: Title, Type, Date, Views, Description */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       <div className="lg:col-span-2">
-                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Video Title</label>
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">
+                          Video Title <span className="text-amber-400">*</span>
+                        </label>
                         <input
                           type="text"
                           placeholder="e.g. Omkara Roopini - Chottanikara Amma"
@@ -1754,17 +1956,6 @@ export default function StudioApp({ onCloseStudio }) {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">YouTube URL or Video ID</label>
-                        <input
-                          type="text"
-                          placeholder="https://youtu.be/... or ID"
-                          value={newVideoInput.url}
-                          onChange={e => setNewVideoInput({ ...newVideoInput, url: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 font-mono"
-                        />
-                      </div>
-
-                      <div>
                         <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Release Date (for Date Order)</label>
                         <input
                           type="date"
@@ -1784,15 +1975,27 @@ export default function StudioApp({ onCloseStudio }) {
                           className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
                         />
                       </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-400 mb-1">Description / Caption (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="Short description or credits..."
+                          value={newVideoInput.description || ''}
+                          onChange={e => setNewVideoInput({ ...newVideoInput, description: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                      </div>
                     </div>
 
                     <button
                       type="button"
                       onClick={handleAddVideo}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-extrabold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer"
+                      disabled={saveStatus === 'uploading'}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-extrabold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-50"
                     >
                       <Plus className="w-4 h-4" />
-                      <span>Add Video to Site</span>
+                      <span>{videoSourceMode === 'device' ? 'Add Device Video to Site' : 'Add YouTube Video to Site'}</span>
                     </button>
                   </div>
 
@@ -1852,8 +2055,9 @@ export default function StudioApp({ onCloseStudio }) {
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <img
-                              src={vid.thumbnail}
+                              src={resolveImageSrc(vid.thumbnail) || vid.thumbnail}
                               alt=""
+                              onError={(e) => { e.currentTarget.src = resolveImageSrc('picSingingMic'); }}
                               className="w-14 h-9 object-cover rounded-md bg-zinc-900 shrink-0"
                             />
                             <div className="min-w-0">
@@ -1864,6 +2068,11 @@ export default function StudioApp({ onCloseStudio }) {
                                 <span className={`px-1.5 py-0.2 rounded font-bold uppercase ${vid.type === 'Short' ? 'bg-rose-500/20 text-rose-300' : 'bg-red-500/20 text-red-300'}`}>
                                   {vid.type || 'Video'}
                                 </span>
+                                {vid.isCustom && (
+                                  <span className="px-1.5 py-0.2 rounded font-bold uppercase bg-amber-500/20 text-amber-300">
+                                    {vid.videoFileUrl ? 'Device Upload' : 'Custom'}
+                                  </span>
+                                )}
                                 <span>{vid.date || vid.timeAgo}</span>
                                 {vid.views && <span>• {vid.views}</span>}
                               </div>
@@ -1871,12 +2080,20 @@ export default function StudioApp({ onCloseStudio }) {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setActiveMediaModal(vid)}
+                              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-amber-400 hover:text-amber-300 transition-all cursor-pointer"
+                              title="Preview Video Player"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                            </button>
                             <a
-                              href={vid.url}
+                              href={vid.videoFileUrl || vid.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white"
-                              title="Open on YouTube"
+                              title={vid.videoFileUrl ? 'Open File URL' : 'Open on YouTube'}
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>

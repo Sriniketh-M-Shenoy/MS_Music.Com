@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Youtube, Eye, Calendar, BellRing } from 'lucide-react';
+import { X, ExternalLink, Youtube, Eye, Calendar, BellRing, Film } from 'lucide-react';
 import { incrementCounter, getLocalMediaClicks } from '../utils/metrics';
 
 export default function VideoPlayerModal({ video, isOpen, onClose }) {
@@ -40,6 +40,33 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
   const isShort = video.type === 'Short';
   const subscribeUrl = 'https://www.youtube.com/@muralidharshenoykochi?sub_confirmation=1';
 
+  const rawUrl = video.videoFileUrl || video.url || '';
+  const isDeviceUpload = Boolean(
+    video.videoFileUrl ||
+    (rawUrl && (rawUrl.startsWith('/uploads/') || rawUrl.match(/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i)))
+  );
+
+  const resolveDeviceVideoSrc = (url) => {
+    if (!url) return '';
+    const trimmed = String(url).trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/uploads/')) {
+      if (typeof window !== 'undefined') {
+        const isDev = window.location.port === '5173' || window.location.port === '3000' || window.location.port === '4173';
+        const isElectron = window.location.protocol === 'file:' || window.location.hostname === '';
+        if (isDev || isElectron) {
+          return `http://localhost:3001${trimmed}`;
+        }
+        const base = import.meta.env?.BASE_URL || './';
+        const cleanBase = base.endsWith('/') ? base : `${base}/`;
+        return `${cleanBase}${trimmed.replace(/^\//, '')}`;
+      }
+    }
+    return trimmed;
+  };
+
   const handleSubscribeClick = () => {
     incrementCounter('youtube_subscribe_clicks');
     incrementCounter('social_clicks_youtube');
@@ -69,11 +96,11 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
           {/* Top Bar */}
           <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-zinc-900/70">
             <div className="flex items-center gap-2.5 min-w-0 pr-3">
-              <div className="w-7 h-7 rounded-lg bg-red-600/20 text-red-500 flex items-center justify-center shrink-0">
-                <Youtube className="w-4 h-4" />
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isDeviceUpload ? 'bg-amber-500/20 text-amber-400' : 'bg-red-600/20 text-red-500'}`}>
+                {isDeviceUpload ? <Film className="w-4 h-4" /> : <Youtube className="w-4 h-4" />}
               </div>
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 shrink-0">
-                {isShort ? 'YouTube Short' : 'YouTube Video'}
+                {isDeviceUpload ? (isShort ? 'Device Short' : 'Device Video') : (isShort ? 'YouTube Short' : 'YouTube Video')}
               </span>
               <span className="text-xs text-zinc-400 truncate hidden md:inline">
                 • {video.title}
@@ -81,31 +108,35 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
             </div>
 
             <div className="flex items-center gap-2.5 shrink-0">
-              {/* Subscribe Button in Header */}
-              <motion.a
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                href={subscribeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleSubscribeClick}
-                className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-full shadow-lg shadow-red-600/30 transition-all cursor-pointer"
-                title="Subscribe to @muralidharshenoykochi on YouTube"
-              >
-                <BellRing className="w-3.5 h-3.5" />
-                <span>Subscribe</span>
-              </motion.a>
+              {/* Subscribe Button in Header (only for YouTube videos) */}
+              {!isDeviceUpload && (
+                <>
+                  <motion.a
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    href={subscribeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleSubscribeClick}
+                    className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-full shadow-lg shadow-red-600/30 transition-all cursor-pointer"
+                    title="Subscribe to @muralidharshenoykochi on YouTube"
+                  >
+                    <BellRing className="w-3.5 h-3.5" />
+                    <span>Subscribe</span>
+                  </motion.a>
 
-              <a
-                href={video.url || `https://www.youtube.com/watch?v=${video.videoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                title="Open directly on YouTube"
-              >
-                <span>YouTube</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+                  <a
+                    href={video.url || `https://www.youtube.com/watch?v=${video.videoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                    title="Open directly on YouTube"
+                  >
+                    <span>YouTube</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </>
+              )}
 
               <button
                 onClick={onClose}
@@ -118,14 +149,24 @@ export default function VideoPlayerModal({ video, isOpen, onClose }) {
           </div>
 
           {/* Video Player Frame */}
-          <div className={`relative bg-black w-full ${isShort ? 'aspect-[9/16] max-h-[70vh] mx-auto' : 'aspect-video'}`}>
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-              title={video.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full border-0"
-            />
+          <div className={`relative bg-black w-full flex items-center justify-center overflow-hidden ${isShort ? 'aspect-[9/16] max-h-[70vh] mx-auto' : 'aspect-video'}`}>
+            {isDeviceUpload ? (
+              <video
+                src={resolveDeviceVideoSrc(rawUrl)}
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full object-contain bg-black"
+              />
+            ) : (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+                title={video.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0"
+              />
+            )}
           </div>
 
           {/* Bottom Details Footer */}

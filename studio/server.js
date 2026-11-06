@@ -471,8 +471,10 @@ async function syncYouTubeChannelVideos() {
         const existing = eval(match[1]);
         if (Array.isArray(existing)) {
           for (const item of existing) {
-            if (item && item.videoId) {
-              existingMap.set(item.videoId, item);
+            if (item) {
+              if (item.videoId) {
+                existingMap.set(item.videoId, item);
+              }
               if (item.isCustom) {
                 customItems.push(item);
               }

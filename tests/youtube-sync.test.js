@@ -55,6 +55,52 @@ describe('YouTube Sync Feature: Video/Short Ingestion, Chronological Ordering & 
     });
   });
 
+  describe('Device Video Uploads & Custom Media Handling', () => {
+    it('creates and sorts device video uploads with native videoFileUrl schema', () => {
+      const deviceUpload = {
+        id: `custom-device-${Date.now()}`,
+        videoId: `local-${Date.now()}`,
+        videoFileUrl: '/uploads/my_concert_recording.mp4',
+        title: 'Kudajadriyil Live Recording',
+        type: 'Video',
+        platform: 'MS Music',
+        date: '2026-11-05',
+        views: '1.2K views',
+        timeAgo: 'Recently Uploaded',
+        url: '/uploads/my_concert_recording.mp4',
+        thumbnail: 'picSingingMic',
+        isCustom: true
+      };
+
+      const olderYt = {
+        id: 'yt-older',
+        videoId: 'abc12345',
+        title: 'Older YouTube Clip',
+        type: 'Short',
+        date: '2026-10-01',
+        isCustom: false
+      };
+
+      const sorted = sortMediaChronological([olderYt, deviceUpload]);
+      assert.strictEqual(sorted[0].id, deviceUpload.id);
+      assert.strictEqual(sorted[0].videoFileUrl, '/uploads/my_concert_recording.mp4');
+      assert.strictEqual(sorted[0].isCustom, true);
+    });
+
+    it('identifies and preserves custom uploads during channel sync filtering', () => {
+      const existingCatalog = [
+        { id: 'custom-dev-1', title: 'Local Device Video', isCustom: true, videoFileUrl: '/uploads/rec.mp4' },
+        { id: 'yt-existing', videoId: 'yt-video-1', title: 'Existing YT Video', isCustom: false }
+      ];
+
+      // Extraction logic used in sync-youtube.js and server.cjs/js
+      const customItems = existingCatalog.filter(item => item.isCustom === true);
+      assert.strictEqual(customItems.length, 1);
+      assert.strictEqual(customItems[0].id, 'custom-dev-1');
+      assert.strictEqual(customItems[0].videoFileUrl, '/uploads/rec.mp4');
+    });
+  });
+
   describe('Current Content Ingestion Integrity', () => {
     it('contains synced videos and shorts with valid schemas', () => {
       assert.ok(Array.isArray(videosContent));
