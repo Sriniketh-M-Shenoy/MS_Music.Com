@@ -1,40 +1,14 @@
 export const eventsContent = [
   {
     id: 2,
-    title: "Konkani Haribhajan & Classical Recital",
-    date: "2026-11-08",
-    formattedDate: "NOV 08, 2026",
-    time: "5:00 PM IST",
-    venue: "Town Hall Auditorium",
+    title: "Classical Concert",
+    date: "2026-11-15",
+    formattedDate: "NOV 15, 2026",
+    time: "7:00 PM IST",
+    venue: "Ambedkar Bhavan ",
     city: "Mangaluru",
     status: "Available",
-    category: "Devotional",
-    ticketed: false,
-    ticketUrl: ""
-  },
-  {
-    id: 1793949476059,
-    title: "Test",
-    date: "2026-12-20",
-    formattedDate: "DEC 20, 2026",
-    time: "6:30 PM IST",
-    venue: "Auditorium Hall",
-    city: "Bengaluru",
-    status: "Available",
-    category: "Public Concert",
-    ticketed: false,
-    ticketUrl: ""
-  },
-  {
-    id: 1793950528634,
-    title: "test 2",
-    date: "2026-12-21",
-    formattedDate: "DEC 21, 2026",
-    time: "6:30 PM IST",
-    venue: "Auditorium Hall",
-    city: "Bengaluru",
-    status: "Available",
-    category: "Public Concert",
+    category: "Carnatic Classical",
     ticketed: false,
     ticketUrl: ""
   }
