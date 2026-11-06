@@ -11,5 +11,18 @@ export const eventsContent = [
     category: "Devotional",
     ticketed: false,
     ticketUrl: ""
+  },
+  {
+    id: 1793949382296,
+    title: "Test",
+    date: "2026-08-06",
+    formattedDate: "Aug 20, 2026",
+    time: "6:30 PM IST",
+    venue: "Auditorium Hall",
+    city: "Bengaluru",
+    status: "Available",
+    category: "Public Concert",
+    ticketed: false,
+    ticketUrl: ""
   }
 ];
