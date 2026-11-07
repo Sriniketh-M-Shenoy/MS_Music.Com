@@ -42,5 +42,15 @@ export const audioTracksContent = [
     spotifyUrl: "",
     audioUrl: "/uploads/AmmaEndrzhaykatha_Final_1792647747691.mp3",
     coverImage: picSingingMic
+  },
+  {
+    id: 1794028203933,
+    title: "New Musical Composition",
+    genre: "Devotional / Classical",
+    language: "Hindi",
+    duration: "03:30",
+    spotifyUrl: "",
+    audioUrl: "",
+    coverImage: picSingingMic
   }
 ];

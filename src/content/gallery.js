@@ -27,5 +27,11 @@ export const galleryContent = [
     url: "file:///Users/srinikethshenoy/Desktop/My_Coding_Projects/MS_Music_Website/MS%20Music%20Studio.app/Contents/Resources/app.asar/dist/assets/pic_tshirt-D-jb9V9G.png",
     caption: "Musical Journey & Artist Portrait",
     category: "Festival"
+  },
+  {
+    id: 1793953342585,
+    url: picSingingMic,
+    caption: "With Vidhyadharan Master",
+    category: "Concerts"
   }
 ];
