@@ -2,8 +2,8 @@ name: Sync YouTube Media Daily
 
 on:
   schedule:
-    # Run twice daily (06:00 and 18:00 UTC) to fetch any newly uploaded videos or shorts
-    - cron: '0 6,18 * * *'
+    # Run every 2 hours to catch newly uploaded videos or shorts throughout the day
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -32,8 +32,8 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [[ -n $(git status --porcelain src/content/videos.js) ]]; then
-            git add src/content/videos.js
+          if [[ -n $(git status --porcelain src/content/videos.js public/youtube-feed.json) ]]; then
+            git add src/content/videos.js public/youtube-feed.json
             git commit -m "Auto: Synced latest YouTube videos & shorts from @muralidharshenoykochi"
             git push
           else

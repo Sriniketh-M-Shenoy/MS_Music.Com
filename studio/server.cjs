@@ -721,6 +721,12 @@ async function syncYouTubeChannelVideos() {
 
   finalItems.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   fs.writeFileSync(videosPath, `// Automatically synced YouTube videos & shorts from @muralidharshenoykochi\nexport const videosContent = ${JSON.stringify(finalItems, null, 2)};\n`, 'utf-8');
+
+  try {
+    const publicFeedPath = path.join(ROOT_DIR, 'public', 'youtube-feed.json');
+    fs.writeFileSync(publicFeedPath, JSON.stringify(finalItems, null, 2), 'utf-8');
+  } catch (feedErr) {}
+
   return finalItems;
 }
 

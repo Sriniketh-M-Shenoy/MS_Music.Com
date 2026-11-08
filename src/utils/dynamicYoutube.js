@@ -171,11 +171,13 @@ export async function fetchDynamicYouTubeVideos(fallbackVideos = [], options = {
     }
   }
 
-  // Attempt 2: Public YouTube Channel RSS feed via CORS-enabled rss2json
+  // Attempt 2: Public YouTube Channel RSS feed via CORS-enabled rss2json (with timestamp cache-buster)
   if (fetchedItems.length === 0) {
     try {
-      const rssUrl = encodeURIComponent(`https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`);
-      const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
+      const cacheBuster = Date.now();
+      const rawFeedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}&_cb=${cacheBuster}`;
+      const rssUrl = encodeURIComponent(rawFeedUrl);
+      const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&_=${cacheBuster}`;
       const res = await fetch(proxyUrl, {
         signal: AbortSignal.timeout(timeoutMs)
       });
@@ -189,6 +191,23 @@ export async function fetchDynamicYouTubeVideos(fallbackVideos = [], options = {
       }
     } catch (err) {
       console.warn('[Dynamic YouTube] RSS proxy error:', err.message);
+    }
+  }
+
+  // Attempt 3: Direct static feed (deployed alongside site with zero CORS)
+  if (fetchedItems.length === 0 && typeof window !== 'undefined') {
+    try {
+      const feedRes = await fetch(`./youtube-feed.json?_t=${Date.now()}`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (feedRes.ok) {
+        const feedData = await feedRes.json();
+        if (Array.isArray(feedData) && feedData.length > 0) {
+          fetchedItems = feedData;
+        }
+      }
+    } catch (e) {
+      // Ignore static json error
     }
   }
 

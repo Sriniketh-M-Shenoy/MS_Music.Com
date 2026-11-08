@@ -258,6 +258,15 @@ export async function fetchYouTubeMedia() {
 
   const code = `// Automatically synced YouTube videos & shorts from @muralidharshenoykochi\nexport const videosContent = ${JSON.stringify(sortedFinalItems, null, 2)};\n`;
   fs.writeFileSync(videosPath, code, 'utf-8');
+
+  // Also write public/youtube-feed.json so the browser can load it directly with zero CORS issues
+  try {
+    const publicFeedPath = path.resolve(__dirname, '..', 'public', 'youtube-feed.json');
+    fs.writeFileSync(publicFeedPath, JSON.stringify(sortedFinalItems, null, 2), 'utf-8');
+  } catch (feedErr) {
+    console.warn('[Sync YouTube] Notice: Could not write public/youtube-feed.json:', feedErr.message);
+  }
+
   console.log(`[Sync YouTube] Successfully synced ${sortedFinalItems.length} videos & shorts in chronological order!`);
   return sortedFinalItems;
 }
