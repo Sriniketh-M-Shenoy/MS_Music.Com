@@ -264,7 +264,7 @@ function generateSocialsJs(data) {
   let yt = data.youtube || "https://www.youtube.com/@muralidharshenoykochi";
   if (yt.includes("muralidhargshenoykochi")) yt = "https://www.youtube.com/@muralidharshenoykochi";
   let ytSub = data.youtubeSubscribe || "https://www.youtube.com/@muralidharshenoykochi?sub_confirmation=1";
-  if (ytSub.includes("muralidhargshenoykochi")) ytSub = "https://www.youtube.com/@muralidharshenoykochi?sub_confirmation=1";
+  if (!ytSub || ytSub.includes("UCZZkLUPMv1Ka4bNSyOpYGOA") || ytSub.includes("muralidhargshenoykochi")) ytSub = "https://www.youtube.com/@muralidharshenoykochi?sub_confirmation=1";
 
   return `export const socialsContent = {
   spotify: ${JSON.stringify(data.spotify || "")},

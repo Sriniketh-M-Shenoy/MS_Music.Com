@@ -1549,139 +1549,6 @@ export default function StudioApp({ onCloseStudio }) {
                     </div>
                   </div>
 
-                  {/* Concert Notifications Google Form Configuration */}
-                  <div className="bg-gradient-to-br from-zinc-900 via-zinc-900 to-amber-950/20 border border-amber-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
-                          <Bell className="w-4 h-4 animate-pulse" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                            <span>Concert Notifications & Tour Updates Popup</span>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">
-                              Google Form
-                            </span>
-                          </h3>
-                          <p className="text-[11px] text-zinc-400">
-                            Configure the Google Form popup that fans see when clicking "Get Concert Notifications"
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPreviewNotificationsModal(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Test / Preview Popup</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Enable toggle */}
-                      <div className="md:col-span-2 flex items-center justify-between p-3 bg-zinc-950/70 border border-zinc-800 rounded-xl">
-                        <div>
-                          <span className="text-xs font-bold text-white block">
-                            Show Concert Notifications Button & Banner
-                          </span>
-                          <span className="text-[11px] text-zinc-400">
-                            Display the "Get Concert Notifications" button and notification banner in the concert schedule section.
-                          </span>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={concertNotifications.enabled !== false}
-                          onChange={e => {
-                            setConcertNotifications({ ...concertNotifications, enabled: e.target.checked });
-                            markDirty();
-                          }}
-                          className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
-                        />
-                      </div>
-
-                      {/* Google Form URL */}
-                      <div className="md:col-span-2">
-                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                          <span>Google Form URL or Preview Link</span>
-                          <span className="text-amber-400 font-bold">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={concertNotifications.formUrl || ''}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setConcertNotifications({
-                              ...concertNotifications,
-                              formUrl: val,
-                              directFormUrl: val.includes('/preview') ? val.replace('/preview', '/viewform') : val
-                            });
-                            markDirty();
-                          }}
-                          placeholder="https://docs.google.com/forms/d/.../preview or /viewform"
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white font-mono outline-none focus:border-amber-400"
-                        />
-                        <p className="text-[10px] text-zinc-500 mt-1">
-                          Current form: <a href={concertNotifications.formUrl} target="_blank" rel="noopener noreferrer" className="text-amber-400 underline">{concertNotifications.formUrl}</a>
-                        </p>
-                      </div>
-
-                      {/* Button Label */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
-                          Button Text
-                        </label>
-                        <input
-                          type="text"
-                          value={concertNotifications.buttonText || ''}
-                          onChange={e => {
-                            setConcertNotifications({ ...concertNotifications, buttonText: e.target.value });
-                            markDirty();
-                          }}
-                          placeholder="e.g. Get Concert Notifications & Tour Updates"
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
-                        />
-                      </div>
-
-                      {/* Banner / Popup Title */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
-                          Popup & Banner Title
-                        </label>
-                        <input
-                          type="text"
-                          value={concertNotifications.title || ''}
-                          onChange={e => {
-                            setConcertNotifications({ ...concertNotifications, title: e.target.value });
-                            markDirty();
-                          }}
-                          placeholder="e.g. Never Miss a Live Concert"
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 font-bold"
-                        />
-                      </div>
-
-                      {/* Description / Subtitle */}
-                      <div className="md:col-span-2">
-                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
-                          Description / Message
-                        </label>
-                        <input
-                          type="text"
-                          value={concertNotifications.description || ''}
-                          onChange={e => {
-                            setConcertNotifications({ ...concertNotifications, description: e.target.value });
-                            markDirty();
-                          }}
-                          placeholder="Short message explaining what fans will receive..."
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="space-y-4">
                     {sortConcertsAscending(events).map((evt, index) => {
                       const counterId = `${sanitizeCounterId(evt.title)}_book_ticket_counter`;
@@ -1983,6 +1850,139 @@ export default function StudioApp({ onCloseStudio }) {
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Concert Notifications Google Form Configuration (situated below the concerts list) */}
+                  <div className="bg-gradient-to-br from-zinc-900 via-zinc-900 to-amber-950/20 border border-amber-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
+                          <Bell className="w-4 h-4 animate-pulse" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                            <span>Concert Notifications & Tour Updates Popup</span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">
+                              Google Form
+                            </span>
+                          </h3>
+                          <p className="text-[11px] text-zinc-400">
+                            Configure the Google Form popup that fans see when clicking "Get Concert Notifications"
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewNotificationsModal(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Test / Preview Popup</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Enable toggle */}
+                      <div className="md:col-span-2 flex items-center justify-between p-3 bg-zinc-950/70 border border-zinc-800 rounded-xl">
+                        <div>
+                          <span className="text-xs font-bold text-white block">
+                            Show Concert Notifications Button & Banner
+                          </span>
+                          <span className="text-[11px] text-zinc-400">
+                            Display the "Get Concert Notifications" button and notification banner in the concert schedule section.
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={concertNotifications.enabled !== false}
+                          onChange={e => {
+                            setConcertNotifications({ ...concertNotifications, enabled: e.target.checked });
+                            markDirty();
+                          }}
+                          className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Google Form URL */}
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                          <span>Google Form URL or Preview Link</span>
+                          <span className="text-amber-400 font-bold">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={concertNotifications.formUrl || ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setConcertNotifications({
+                              ...concertNotifications,
+                              formUrl: val,
+                              directFormUrl: val.includes('/preview') ? val.replace('/preview', '/viewform') : val
+                            });
+                            markDirty();
+                          }}
+                          placeholder="https://docs.google.com/forms/d/.../preview or /viewform"
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white font-mono outline-none focus:border-amber-400"
+                        />
+                        <p className="text-[10px] text-zinc-500 mt-1">
+                          Current form: <a href={concertNotifications.formUrl} target="_blank" rel="noopener noreferrer" className="text-amber-400 underline">{concertNotifications.formUrl}</a>
+                        </p>
+                      </div>
+
+                      {/* Button Label */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                          Button Text
+                        </label>
+                        <input
+                          type="text"
+                          value={concertNotifications.buttonText || ''}
+                          onChange={e => {
+                            setConcertNotifications({ ...concertNotifications, buttonText: e.target.value });
+                            markDirty();
+                          }}
+                          placeholder="e.g. Get Concert Notifications & Tour Updates"
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                      </div>
+
+                      {/* Banner / Popup Title */}
+                      <div>
+                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                          Popup & Banner Title
+                        </label>
+                        <input
+                          type="text"
+                          value={concertNotifications.title || ''}
+                          onChange={e => {
+                            setConcertNotifications({ ...concertNotifications, title: e.target.value });
+                            markDirty();
+                          }}
+                          placeholder="e.g. Never Miss a Live Concert"
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400 font-bold"
+                        />
+                      </div>
+
+                      {/* Description / Subtitle */}
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
+                          Description / Message
+                        </label>
+                        <input
+                          type="text"
+                          value={concertNotifications.description || ''}
+                          onChange={e => {
+                            setConcertNotifications({ ...concertNotifications, description: e.target.value });
+                            markDirty();
+                          }}
+                          placeholder="Short message explaining what fans will receive..."
+                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
