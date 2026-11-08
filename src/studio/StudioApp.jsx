@@ -6,14 +6,14 @@ import {
   X, Play, Pause, ExternalLink, Check, ChevronRight, History, RotateCcw,
   GitBranch, GitCommit, GitMerge, AlertTriangle, ShieldAlert,
   BarChart3, Key, Lock, Ticket, TrendingUp, Activity, ShieldCheck, Info,
-  Youtube, Search, Star, Bell
+  Youtube, Search, Star, Bell, Clock
 } from 'lucide-react';
 import { 
   getCounterValue, sanitizeCounterId, API_KEY,
   getVideoCounterId, recordMediaClick, getLocalMediaClicks, incrementCounter,
   getSongCounterId, recordSongPlay, getLocalSongPlays
 } from '../utils/metrics';
-import { filterUpcomingConcerts, isUpcomingConcert, sortConcertsAscending, formatConcertDate, parseConcertDate } from '../utils/concerts';
+import { filterUpcomingConcerts, isUpcomingConcert, sortConcertsAscending, formatConcertDate, parseConcertDate, formatFullDate } from '../utils/concerts';
 import VideoPlayerModal from '../components/VideoPlayerModal';
 import ConcertNotificationsModal from '../components/ConcertNotificationsModal';
 
@@ -36,6 +36,21 @@ import MainSiteView from '../components/MainSiteView';
 import { resolveImageSrc } from '../utils/resolveImageSrc';
 
 const API_BASE = 'http://localhost:3001';
+
+const CONCERT_TIME_OPTIONS = [
+  { label: '6:30 PM IST (Evening - Most Popular)', value: '6:30 PM IST' },
+  { label: '7:00 PM IST (Prime Evening)', value: '7:00 PM IST' },
+  { label: '7:30 PM IST', value: '7:30 PM IST' },
+  { label: '8:00 PM IST (Night Concert)', value: '8:00 PM IST' },
+  { label: '8:30 PM IST (Late Evening)', value: '8:30 PM IST' },
+  { label: '6:00 PM IST (Early Evening)', value: '6:00 PM IST' },
+  { label: '5:30 PM IST', value: '5:30 PM IST' },
+  { label: '5:00 PM IST', value: '5:00 PM IST' },
+  { label: '9:00 PM IST', value: '9:00 PM IST' },
+  { label: '10:00 AM IST (Morning Recital)', value: '10:00 AM IST' },
+  { label: '11:00 AM IST', value: '11:00 AM IST' },
+  { label: '4:00 PM IST (Matinee)', value: '4:00 PM IST' }
+];
 
 export default function StudioApp({ onCloseStudio }) {
   // Mode: 'editor' | 'preview'
@@ -1706,109 +1721,176 @@ export default function StudioApp({ onCloseStudio }) {
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div>
-                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Date (YYYY-MM-DD)</label>
-                              <input
-                                type="date"
-                                value={evt.date || ''}
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  const newE = [...events];
-                                  newE[index].date = val;
-                                  if (val) {
-                                    newE[index].formattedDate = formatConcertDate(val);
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* 1. Date Selection with Calendar Picker & Unambiguous Live Preview */}
+                              <div className="space-y-1 bg-zinc-950/60 p-3 rounded-xl border border-zinc-800">
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="text-[11px] text-zinc-300 font-semibold flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>Concert Date (Calendar Selection)</span>
+                                  </label>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">
+                                    {evt.formattedDate || formatConcertDate(evt.date) || 'Select Date'}
+                                  </span>
+                                </div>
+
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="date"
+                                    value={evt.date || ''}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      const newE = [...events];
+                                      newE[index].date = val;
+                                      if (val) {
+                                        newE[index].formattedDate = formatConcertDate(val);
+                                      }
+                                      setEvents(sortConcertsAscending(newE));
+                                      markDirty();
+                                    }}
+                                    className="bg-zinc-900 border border-zinc-800 rounded-lg pl-3 pr-10 py-2 text-xs text-white outline-none w-full focus:border-amber-500 font-mono cursor-pointer"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      const input = e.currentTarget.previousElementSibling;
+                                      if (input && input.showPicker) {
+                                        input.showPicker();
+                                      } else if (input) {
+                                        input.focus();
+                                      }
+                                    }}
+                                    className="absolute right-2 text-zinc-400 hover:text-amber-400 p-1.5 rounded transition-colors cursor-pointer"
+                                    title="Open Calendar Picker"
+                                  >
+                                    <Calendar className="w-4 h-4 text-amber-400" />
+                                  </button>
+                                </div>
+
+                                {evt.date && (
+                                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 text-[11px] text-zinc-300 mt-1.5">
+                                    <span className="text-amber-400 font-bold flex-shrink-0">📅 Scheduled for:</span>
+                                    <span className="text-white font-semibold truncate">{formatFullDate(evt.date)}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* 2. Concert Time Dropdown Selection */}
+                              <div className="space-y-1 bg-zinc-950/60 p-3 rounded-xl border border-zinc-800">
+                                <label className="text-[11px] text-zinc-300 font-semibold block mb-1 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Concert Time (Select)</span>
+                                </label>
+
+                                <select
+                                  value={
+                                    CONCERT_TIME_OPTIONS.some(opt => opt.value === evt.time)
+                                      ? evt.time
+                                      : (evt.time ? 'custom' : '6:30 PM IST')
                                   }
-                                  setEvents(sortConcertsAscending(newE));
-                                  markDirty();
-                                }}
-                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
-                              />
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    const newE = [...events];
+                                    if (val === 'custom') {
+                                      if (!newE[index].time || CONCERT_TIME_OPTIONS.some(opt => opt.value === newE[index].time)) {
+                                        newE[index].time = '6:30 PM IST';
+                                      }
+                                    } else {
+                                      newE[index].time = val;
+                                    }
+                                    setEvents(newE);
+                                    markDirty();
+                                  }}
+                                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white outline-none w-full focus:border-amber-500 cursor-pointer"
+                                >
+                                  <optgroup label="Standard Evening & Night Slots">
+                                    {CONCERT_TIME_OPTIONS.slice(0, 9).map(opt => (
+                                      <option key={opt.value} value={opt.value} className="bg-zinc-900 text-white">
+                                        {opt.label}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                  <optgroup label="Morning & Afternoon Slots">
+                                    {CONCERT_TIME_OPTIONS.slice(9).map(opt => (
+                                      <option key={opt.value} value={opt.value} className="bg-zinc-900 text-white">
+                                        {opt.label}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                  <option value="custom" className="bg-zinc-900 text-amber-400 font-bold">
+                                    ✏️ Custom Time...
+                                  </option>
+                                </select>
+
+                                {!CONCERT_TIME_OPTIONS.some(opt => opt.value === evt.time) && (
+                                  <div className="mt-1.5">
+                                    <input
+                                      type="text"
+                                      placeholder="e.g. 6:15 PM IST or 7:00 PM GST"
+                                      value={evt.time || ''}
+                                      onChange={e => {
+                                        const newE = [...events];
+                                        newE[index].time = e.target.value;
+                                        setEvents(newE);
+                                        markDirty();
+                                      }}
+                                      className="bg-zinc-900 border border-amber-500/40 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500 font-mono"
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
-                            <div>
-                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Formatted Display Date</label>
-                              <input
-                                type="text"
-                                placeholder="OCT 15, 2026"
-                                value={evt.formattedDate || ''}
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  const newE = [...events];
-                                  newE[index].formattedDate = val;
-                                  const parsed = parseConcertDate(val);
-                                  if (parsed) {
-                                    newE[index].date = parsed.toISOString().split('T')[0];
-                                  }
-                                  setEvents(sortConcertsAscending(newE));
-                                  markDirty();
-                                }}
-                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
-                              />
-                            </div>
+                            {/* 3. Category, Venue, City in 3-column row */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Category / Genre</label>
+                                <input
+                                  type="text"
+                                  placeholder="Devotional / Classical / Film"
+                                  value={evt.category || ''}
+                                  onChange={e => {
+                                    const newE = [...events];
+                                    newE[index].category = e.target.value;
+                                    setEvents(newE);
+                                    markDirty();
+                                  }}
+                                  className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                                />
+                              </div>
 
-                            <div>
-                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Concert Time</label>
-                              <input
-                                type="text"
-                                placeholder="6:30 PM IST"
-                                value={evt.time || ''}
-                                onChange={e => {
-                                  const newE = [...events];
-                                  newE[index].time = e.target.value;
-                                  setEvents(newE);
-                                  markDirty();
-                                }}
-                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
-                              />
-                            </div>
+                              <div>
+                                <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Venue Name</label>
+                                <input
+                                  type="text"
+                                  placeholder="Auditorium / Hall"
+                                  value={evt.venue || ''}
+                                  onChange={e => {
+                                    const newE = [...events];
+                                    newE[index].venue = e.target.value;
+                                    setEvents(newE);
+                                    markDirty();
+                                  }}
+                                  className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                                />
+                              </div>
 
-                            <div>
-                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Category / Genre</label>
-                              <input
-                                type="text"
-                                placeholder="Devotional / Classical / Film"
-                                value={evt.category || ''}
-                                onChange={e => {
-                                  const newE = [...events];
-                                  newE[index].category = e.target.value;
-                                  setEvents(newE);
-                                  markDirty();
-                                }}
-                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">Venue Name</label>
-                              <input
-                                type="text"
-                                placeholder="Auditorium / Hall"
-                                value={evt.venue || ''}
-                                onChange={e => {
-                                  const newE = [...events];
-                                  newE[index].venue = e.target.value;
-                                  setEvents(newE);
-                                  markDirty();
-                                }}
-                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="text-[10px] text-zinc-400 font-semibold block mb-1">City</label>
-                              <input
-                                type="text"
-                                placeholder="Bengaluru / Mangaluru"
-                                value={evt.city || ''}
-                                onChange={e => {
-                                  const newE = [...events];
-                                  newE[index].city = e.target.value;
-                                  setEvents(newE);
-                                  markDirty();
-                                }}
-                                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
-                              />
+                              <div>
+                                <label className="text-[10px] text-zinc-400 font-semibold block mb-1">City</label>
+                                <input
+                                  type="text"
+                                  placeholder="Bengaluru / Kochi / Mangaluru"
+                                  value={evt.city || ''}
+                                  onChange={e => {
+                                    const newE = [...events];
+                                    newE[index].city = e.target.value;
+                                    setEvents(newE);
+                                    markDirty();
+                                  }}
+                                  className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none w-full focus:border-amber-500"
+                                />
+                              </div>
                             </div>
                           </div>
 

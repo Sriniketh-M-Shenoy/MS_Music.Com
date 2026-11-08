@@ -15,7 +15,7 @@ export const eventsContent = [
   {
     id: 2,
     title: "Classical Concert",
-    date: "2026-12-11",
+    date: "2026-12-12",
     formattedDate: "DEC 12, 2026",
     time: "8:30 PM IST",
     venue: "T.D. Temple ",

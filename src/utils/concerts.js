@@ -34,6 +34,23 @@ export function formatConcertDate(dateInput) {
   return `${m} ${day}, ${year}`;
 }
 
+const FULL_MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export function formatFullDate(dateInput) {
+  if (!dateInput) return '';
+  const d = parseConcertDate(dateInput);
+  if (!d) return String(dateInput);
+  const weekday = WEEKDAY_NAMES[d.getDay()] || '';
+  const month = FULL_MONTH_NAMES[d.getMonth()] || '';
+  const day = d.getDate();
+  const year = d.getFullYear();
+  return `${weekday}, ${month} ${day}, ${year}`;
+}
+
 export function parseConcertDate(dateStr) {
   if (!dateStr) return null;
   if (dateStr instanceof Date) {
