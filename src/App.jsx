@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import StudioApp from './studio/StudioApp';
 import MainSiteView from './components/MainSiteView';
 import IntroLoader from './components/IntroLoader';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
   const isElectron = typeof window !== 'undefined' && (
@@ -22,27 +23,33 @@ export default function App() {
   const [introFinished, setIntroFinished] = useState(false);
 
   if (isStudioOpen) {
-    return <StudioApp onCloseStudio={() => setIsStudioOpen(false)} />;
+    return (
+      <ErrorBoundary onCloseStudio={() => setIsStudioOpen(false)}>
+        <StudioApp onCloseStudio={() => setIsStudioOpen(false)} />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <div className="relative min-h-screen bg-black">
-      {!introFinished && (
-        <IntroLoader onComplete={() => setIntroFinished(true)} />
-      )}
+    <ErrorBoundary>
+      <div className="relative min-h-screen bg-black">
+        {!introFinished && (
+          <IntroLoader onComplete={() => setIntroFinished(true)} />
+        )}
 
-      <MainSiteView />
+        <MainSiteView />
 
-      {/* Floating Studio Button for Local Desktop editing */}
-      {isLocalHost && (
-        <button
-          onClick={() => setIsStudioOpen(true)}
-          className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-amber-500 to-amber-400 text-black px-4 py-2.5 rounded-full font-bold text-xs shadow-2xl hover:scale-105 transition-all border border-amber-300 flex items-center gap-2"
-        >
-          <span className="w-2 h-2 rounded-full bg-black animate-ping"></span>
-          ✏️ Open MS Studio Editor
-        </button>
-      )}
-    </div>
+        {/* Floating Studio Button for Local Desktop editing */}
+        {isLocalHost && (
+          <button
+            onClick={() => setIsStudioOpen(true)}
+            className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-amber-500 to-amber-400 text-black px-4 py-2.5 rounded-full font-bold text-xs shadow-2xl hover:scale-105 transition-all border border-amber-300 flex items-center gap-2"
+          >
+            <span className="w-2 h-2 rounded-full bg-black animate-ping"></span>
+            ✏️ Open MS Studio Editor
+          </button>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
