@@ -214,6 +214,64 @@ export default function StudioApp({ onCloseStudio }) {
     setUploadedImagesLoading(false);
   };
 
+  /**
+   * Fetch the latest content from disk (after git pull) and apply it to Studio state.
+   * This is the core of the gallery sync fix: after pulling from GitHub, the UI
+   * now reflects what's actually on disk instead of showing a stale localStorage draft.
+   */
+  const fetchAndApplyContent = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/load-content`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.success) return;
+
+      // Apply each content section from disk if present
+      if (Array.isArray(data.gallery) && data.gallery.length > 0) {
+        setGallery(data.gallery);
+      }
+      if (Array.isArray(data.events)) {
+        setEvents(sortConcertsAscending(filterUpcomingConcerts(data.events)));
+      }
+      if (data.concertNotifications && typeof data.concertNotifications === 'object') {
+        setConcertNotifications(prev => ({ ...prev, ...data.concertNotifications }));
+      }
+      if (data.socials && typeof data.socials === 'object') {
+        setSocials(prev => ({ ...prev, ...data.socials }));
+      }
+      if (Array.isArray(data.faqs) && data.faqs.length > 0) {
+        setFaqs(data.faqs);
+      }
+      if (Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+        setTestimonials(data.testimonials);
+      }
+      if (Array.isArray(data.sectionConfig) && data.sectionConfig.length > 0) {
+        setSectionConfig(data.sectionConfig);
+      }
+
+      // Persist the fresh content to localStorage so it survives a page reload
+      try {
+        const existing = JSON.parse(localStorage.getItem('ms_studio_draft') || '{}');
+        const updated = {
+          ...existing,
+          ...(data.gallery ? { gallery: data.gallery } : {}),
+          ...(data.events ? { events: data.events } : {}),
+          ...(data.concertNotifications ? { concertNotifications: data.concertNotifications } : {}),
+          ...(data.socials ? { socials: data.socials } : {}),
+          ...(data.faqs ? { faqs: data.faqs } : {}),
+          ...(data.testimonials ? { testimonials: data.testimonials } : {}),
+          ...(data.sectionConfig ? { sectionConfig: data.sectionConfig } : {}),
+        };
+        localStorage.setItem('ms_studio_draft', JSON.stringify(updated));
+      } catch (e) {}
+
+      // Also refresh the uploaded images list
+      fetchUploadedImages();
+    } catch (e) {
+      console.warn('[MS Studio] fetchAndApplyContent failed:', e.message);
+    }
+  };
+
   const fetchGitConfig = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/git-config`);
@@ -480,6 +538,9 @@ export default function StudioApp({ onCloseStudio }) {
         if (res.ok) {
           fetchGitStatus();
           fetchGitHistory();
+          // 1b. Reload all content from disk after pull so gallery/events/etc.
+          //     reflect what was just pulled from GitHub (not the stale localStorage draft)
+          await fetchAndApplyContent();
         }
       } catch (gitErr) {
         console.warn('Git pull warning during global sync:', gitErr.message);

@@ -63,6 +63,143 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 // Content directory
 const CONTENT_DIR = path.join(ROOT_DIR, 'src', 'content');
 
+// JSON snapshot of all content — written on every save, committed to git,
+// pulled down on sync so the Studio always shows the latest data from GitHub.
+// Stored in studio/ so it's easy to find but separate from the generated JS files.
+const CONTENT_SNAPSHOT_PATH = path.join(ROOT_DIR, 'studio', 'content-data.json');
+
+/**
+ * Write a plain-JSON snapshot of all content alongside the JS files.
+ * This is what /api/load-content returns so the Studio can reload after git pull.
+ */
+function writeContentSnapshot(data) {
+  try {
+    const snapshotDir = path.dirname(CONTENT_SNAPSHOT_PATH);
+    if (!fs.existsSync(snapshotDir)) fs.mkdirSync(snapshotDir, { recursive: true });
+    fs.writeFileSync(CONTENT_SNAPSHOT_PATH, JSON.stringify(data, null, 2));
+  } catch (e) {
+    console.warn('[MS Studio] Could not write content snapshot:', e.message);
+  }
+}
+
+/**
+ * Parse a generated gallery.js file back into a plain JS array.
+ * The file uses fixed patterns from generateGalleryJs so regex parsing is safe.
+ */
+function parseGalleryJs(filePath) {
+  try {
+    const src = fs.readFileSync(filePath, 'utf8');
+    // Replace named asset references with placeholder strings so we can JSON-parse the blocks
+    const normalised = src
+      .replace(/\bpicSingingMic\b/g, '"picSingingMic"')
+      .replace(/\bpicMicBlack\b/g, '"picMicBlack"')
+      .replace(/\bpicRedKurta\b/g, '"picRedKurta"')
+      .replace(/\bpicTshirt\b/g, '"picTshirt"')
+      .replace(/\bheroBg\b/g, '"heroBg"')
+      .replace(/\bmsSignature\b/g, '"msSignature"')
+      .replace(/\bmsSignatureWhite\b/g, '"msSignatureWhite"');
+    const arrayMatch = normalised.match(/export\s+const\s+galleryContent\s*=\s*(\[[\s\S]*?\]);/);
+    if (!arrayMatch) return null;
+    // Convert JS object literals to JSON (wrap keys in quotes)
+    const jsonStr = arrayMatch[1]
+      .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3')  // quote unquoted keys
+      .replace(/,\s*([}\]])/g, '$1');                   // remove trailing commas
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Parse eventsContent and concertNotificationsConfig from events.js.
+ */
+function parseEventsJs(filePath) {
+  try {
+    const src = fs.readFileSync(filePath, 'utf8');
+    // Extract eventsContent array
+    const arrMatch = src.match(/export\s+const\s+eventsContent\s*=\s*(\[[\s\S]*?\]);/);
+    // Extract concertNotificationsConfig object
+    const cfgMatch = src.match(/export\s+const\s+concertNotificationsConfig\s*=\s*(\{[\s\S]*?\});/);
+
+    const toJson = (raw) => {
+      if (!raw) return null;
+      try {
+        return JSON.parse(
+          raw
+            .replace(/([{,\[]\s*)(\w+)(\s*:)/g, '$1"$2"$3')
+            .replace(/,\s*([}\]\)])/g, '$1')
+        );
+      } catch (e2) { return null; }
+    };
+
+    return {
+      events: toJson(arrMatch ? arrMatch[1] : null) || [],
+      concertNotifications: toJson(cfgMatch ? cfgMatch[1] : null) || null
+    };
+  } catch (e) {
+    return { events: [], concertNotifications: null };
+  }
+}
+
+/**
+ * Parse a simple exported JS object (socials, sectionConfig, etc.) into plain JSON.
+ */
+function parseSimpleExport(filePath, exportName) {
+  try {
+    const src = fs.readFileSync(filePath, 'utf8');
+    const isArray = src.includes(`const ${exportName} = [`);
+    const pattern = isArray
+      ? new RegExp(`export\\s+const\\s+${exportName}\\s*=\\s*(\\[[\\s\\S]*?\\]);`)
+      : new RegExp(`export\\s+const\\s+${exportName}\\s*=\\s*(\\{[\\s\\S]*?\\});`);
+    const match = src.match(pattern);
+    if (!match) return null;
+    const jsonStr = match[1]
+      .replace(/([{,\[]\s*)(\w+)(\s*:)/g, '$1"$2"$3')
+      .replace(/,\s*([}\]\)])/g, '$1');
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Read all content files from disk and return as a plain JS object.
+ * First tries the JSON snapshot; falls back to parsing the JS files.
+ */
+function loadContentFromDisk() {
+  // 1. Try the JSON snapshot (written by save-content and committed to git)
+  if (fs.existsSync(CONTENT_SNAPSHOT_PATH)) {
+    try {
+      const snap = JSON.parse(fs.readFileSync(CONTENT_SNAPSHOT_PATH, 'utf8'));
+      if (snap && (snap.gallery || snap.events)) return { source: 'snapshot', ...snap };
+    } catch (e) {}
+  }
+
+  // 2. Fallback: parse the JS content files directly
+  const result = { source: 'parsed' };
+
+  const galleryData = parseGalleryJs(path.join(CONTENT_DIR, 'gallery.js'));
+  if (galleryData) result.gallery = galleryData;
+
+  const eventsData = parseEventsJs(path.join(CONTENT_DIR, 'events.js'));
+  if (eventsData.events) result.events = eventsData.events;
+  if (eventsData.concertNotifications) result.concertNotifications = eventsData.concertNotifications;
+
+  const socialsData = parseSimpleExport(path.join(CONTENT_DIR, 'socials.js'), 'socialsContent');
+  if (socialsData) result.socials = socialsData;
+
+  const faqsData = parseSimpleExport(path.join(CONTENT_DIR, 'faqs.js'), 'faqsContent');
+  if (faqsData) result.faqs = faqsData;
+
+  const testimonialsData = parseSimpleExport(path.join(CONTENT_DIR, 'testimonials.js'), 'testimonialsContent');
+  if (testimonialsData) result.testimonials = testimonialsData;
+
+  const sectionConfigData = parseSimpleExport(path.join(CONTENT_DIR, 'sectionConfig.js'), 'sectionConfig');
+  if (sectionConfigData) result.sectionConfig = sectionConfigData;
+
+  return result;
+}
+
 // Helper to get safe, writable path for git-config.json (avoids read-only app.asar ENOTDIR error)
 function getGitConfigPath() {
   if (ROOT_DIR.includes('app.asar') || __dirname.includes('app.asar')) {
@@ -823,6 +960,20 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // 0.6 GET /api/load-content — read all content files from disk and return as JSON
+    // Called by the Studio after every git pull so the UI reflects the latest content from GitHub.
+    if (pathname === '/api/load-content' && req.method === 'GET') {
+      try {
+        const content = loadContentFromDisk();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, ...content }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+      return;
+    }
+
     // 1. GET /api/git-status
     if (pathname === '/api/git-status' && req.method === 'GET') {
       let branch = 'main';
@@ -1202,6 +1353,19 @@ const server = http.createServer(async (req, res) => {
       if (body.testimonials) fs.writeFileSync(path.join(CONTENT_DIR, 'testimonials.js'), generateTestimonialsJs(body.testimonials));
       if (body.faqs) fs.writeFileSync(path.join(CONTENT_DIR, 'faqs.js'), generateFaqsJs(body.faqs));
       if (body.sectionConfig) fs.writeFileSync(path.join(CONTENT_DIR, 'sectionConfig.js'), generateSectionConfigJs(body.sectionConfig));
+
+      // Write JSON snapshot so /api/load-content can serve it after git pull
+      // Omit hero/about/posts/audio because they reference Vite image imports not portable as JSON
+      writeContentSnapshot({
+        gallery: body.gallery || [],
+        events: body.events || [],
+        concertNotifications: body.concertNotifications || null,
+        socials: body.socials || null,
+        faqs: body.faqs || [],
+        testimonials: body.testimonials || [],
+        sectionConfig: body.sectionConfig || [],
+        savedAt: new Date().toISOString()
+      });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, message: 'Content saved successfully' }));
