@@ -198,6 +198,22 @@ export default function StudioApp({ onCloseStudio }) {
     description: ''
   });
 
+  // Gallery: list of images already uploaded to the server (for quick picker)
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [uploadedImagesLoading, setUploadedImagesLoading] = useState(false);
+
+  const fetchUploadedImages = async () => {
+    setUploadedImagesLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/list-uploads`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) setUploadedImages(data.images || []);
+      }
+    } catch (e) {}
+    setUploadedImagesLoading(false);
+  };
+
   const fetchGitConfig = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/git-config`);
@@ -451,6 +467,7 @@ export default function StudioApp({ onCloseStudio }) {
     fetchGitHistory();
     checkConflictStatus();
     fetchGitConfig();
+    fetchUploadedImages();
   }, []);
 
   const handleSyncGitPull = async () => {
@@ -1991,13 +2008,16 @@ export default function StudioApp({ onCloseStudio }) {
               {activeTab === 'gallery' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5 text-amber-400" />
-                      Photo Gallery Manager
-                    </h2>
+                    <div>
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <ImageIcon className="w-5 h-5 text-amber-400" />
+                        Photo Gallery Manager
+                      </h2>
+                      <p className="text-xs text-zinc-500 mt-1">{gallery.length} photo{gallery.length !== 1 ? 's' : ''} in gallery — previews shown below each entry</p>
+                    </div>
                     <button
                       onClick={() => {
-                        setGallery([...gallery, { id: Date.now(), url: "picSingingMic", caption: "Performance Photo", category: "Concerts" }]);
+                        setGallery([...gallery, { id: Date.now(), url: "picSingingMic", caption: "New Performance Photo", category: "Concerts" }]);
                         markDirty();
                       }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all"
@@ -2007,35 +2027,211 @@ export default function StudioApp({ onCloseStudio }) {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {gallery.map((item, index) => (
-                      <div key={item.id || index} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-amber-400">Photo #{index + 1}</span>
-                          <button onClick={() => { setGallery(gallery.filter((_, i) => i !== index)); markDirty(); }} className="text-zinc-500 hover:text-red-400">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {gallery.map((item, index) => {
+                      // Resolve preview URL for the studio (always use localhost:3001 for uploads)
+                      let previewSrc = resolveImageSrc(item.url);
+                      if (typeof item.url === 'string' && item.url.startsWith('/uploads/')) {
+                        previewSrc = `http://localhost:3001${item.url}`;
+                      }
+                      return (
+                        <div key={item.id || index} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-lg">
+                          {/* Photo Preview */}
+                          <div className="relative w-full h-48 bg-zinc-950 flex items-center justify-center group">
+                            <img
+                              src={previewSrc}
+                              alt={item.caption || `Gallery photo ${index + 1}`}
+                              className="w-full h-48 object-cover"
+                              onError={e => {
+                                e.currentTarget.src = resolveImageSrc('picSingingMic');
+                                e.currentTarget.className = 'w-full h-48 object-contain p-4 opacity-30';
+                              }}
+                            />
+                            {/* Overlay badge */}
+                            <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1.5">
+                              <ImageIcon className="w-3 h-3 text-amber-400" />
+                              <span className="text-xs font-bold text-amber-400">Photo {index + 1}</span>
+                            </div>
+                            {/* Category badge */}
+                            {item.category && (
+                              <div className="absolute top-2 right-2 bg-amber-500/20 border border-amber-500/40 rounded-lg px-2 py-0.5">
+                                <span className="text-xs font-semibold text-amber-300">{item.category}</span>
+                              </div>
+                            )}
+                            {/* Replace photo overlay on hover */}
+                            <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/0 group-hover:bg-black/50 transition-all cursor-pointer opacity-0 group-hover:opacity-100">
+                              <Upload className="w-6 h-6 text-white mb-1" />
+                              <span className="text-xs text-white font-semibold">Replace Photo</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={e => handleFileUpload(e.target.files[0], url => {
+                                  setGallery(gallery.map((g, i) => i === index ? { ...g, url } : g));
+                                })}
+                              />
+                            </label>
+                          </div>
+
+                          {/* Entry Controls */}
+                          <div className="p-4 space-y-3">
+                            {/* Header row */}
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-mono text-zinc-500 truncate max-w-[70%]" title={typeof item.url === 'string' ? item.url : 'static asset'}>
+                                {typeof item.url === 'string' && item.url.startsWith('/uploads/')
+                                  ? item.url.replace('/uploads/', '')
+                                  : typeof item.url === 'string' ? item.url : 'built-in asset'}
+                              </span>
+                              <button
+                                onClick={() => { setGallery(gallery.filter((_, i) => i !== index)); markDirty(); }}
+                                className="flex items-center gap-1 text-zinc-500 hover:text-red-400 text-xs transition-colors"
+                                title="Remove photo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Remove</span>
+                              </button>
+                            </div>
+
+                            {/* Caption */}
+                            <div>
+                              <label className="block text-xs font-semibold text-zinc-400 mb-1">Caption</label>
+                              <input
+                                type="text"
+                                placeholder="Describe this photo…"
+                                value={item.caption || ''}
+                                onChange={e => {
+                                  setGallery(gallery.map((g, i) => i === index ? { ...g, caption: e.target.value } : g));
+                                  markDirty();
+                                }}
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-600 outline-none focus:border-amber-500/50 transition-colors"
+                              />
+                            </div>
+
+                            {/* Category */}
+                            <div>
+                              <label className="block text-xs font-semibold text-zinc-400 mb-1">Category</label>
+                              <select
+                                value={item.category || 'Concerts'}
+                                onChange={e => {
+                                  setGallery(gallery.map((g, i) => i === index ? { ...g, category: e.target.value } : g));
+                                  markDirty();
+                                }}
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-amber-500/50 transition-colors"
+                              >
+                                <option value="Concerts">Concerts</option>
+                                <option value="Studio">Studio</option>
+                                <option value="Festival">Festival</option>
+                                <option value="Awards">Awards</option>
+                                <option value="Behind the Scenes">Behind the Scenes</option>
+                                <option value="Practice">Practice</option>
+                                <option value="Other">Other</option>
+                              </select>
+                            </div>
+
+                            {/* Upload button */}
+                            <label className="flex items-center justify-center gap-2 w-full py-2 rounded-lg border border-dashed border-zinc-700 hover:border-amber-500/60 hover:bg-amber-500/5 cursor-pointer transition-all group/btn">
+                              <Upload className="w-3.5 h-3.5 text-zinc-500 group-hover/btn:text-amber-400 transition-colors" />
+                              <span className="text-xs text-zinc-500 group-hover/btn:text-amber-400 font-medium transition-colors">Upload / Replace Photo</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={e => handleFileUpload(e.target.files[0], url => {
+                                  setGallery(gallery.map((g, i) => i === index ? { ...g, url } : g));
+                                })}
+                              />
+                            </label>
+                          </div>
                         </div>
-                        <input
-                          type="text"
-                          placeholder="Caption"
-                          value={item.caption || ''}
-                          onChange={e => {
-                            setGallery(gallery.map((g, i) => i === index ? { ...g, caption: e.target.value } : g));
-                            markDirty();
-                          }}
-                          className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-white outline-none"
-                        />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={e => handleFileUpload(e.target.files[0], url => {
-                            setGallery(gallery.map((g, i) => i === index ? { ...g, url } : g));
-                          })}
-                          className="text-xs text-zinc-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:bg-amber-500/10 file:text-amber-400"
-                        />
+                      );
+                    })}
+                  </div>
+
+                  {gallery.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <ImageIcon className="w-12 h-12 text-zinc-700 mb-3" />
+                      <p className="text-zinc-500 text-sm font-medium">No photos yet</p>
+                      <p className="text-zinc-600 text-xs mt-1">Click "Add Photo" to add your first gallery entry</p>
+                    </div>
+                  )}
+
+                  {/* ── Uploaded Photos Library ── */}
+                  <div className="border-t border-zinc-800 pt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                          <Upload className="w-4 h-4 text-amber-400" />
+                          Uploaded Photos Library
+                        </h3>
+                        <p className="text-xs text-zinc-500 mt-0.5">All photos you've uploaded — click any to add it to the gallery</p>
                       </div>
-                    ))}
+                      <button
+                        onClick={fetchUploadedImages}
+                        disabled={uploadedImagesLoading}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-700 hover:border-amber-500/50 text-zinc-400 hover:text-amber-400 text-xs font-medium transition-all"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${uploadedImagesLoading ? 'animate-spin' : ''}`} />
+                        {uploadedImagesLoading ? 'Loading…' : 'Refresh'}
+                      </button>
+                    </div>
+
+                    {uploadedImages.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-zinc-800 py-8 text-center">
+                        <ImageIcon className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                        <p className="text-zinc-500 text-xs">{uploadedImagesLoading ? 'Loading uploaded photos…' : 'No photos uploaded yet. Upload a photo above to get started.'}</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                        {uploadedImages.map(img => {
+                          const alreadyInGallery = gallery.some(g => g.url === img.url);
+                          return (
+                            <div
+                              key={img.url}
+                              className={`relative group rounded-xl overflow-hidden border cursor-pointer transition-all ${
+                                alreadyInGallery
+                                  ? 'border-amber-500/60 ring-2 ring-amber-500/30'
+                                  : 'border-zinc-800 hover:border-amber-500/40'
+                              }`}
+                              onClick={() => {
+                                if (alreadyInGallery) return;
+                                setGallery(prev => [...prev, {
+                                  id: Date.now(),
+                                  url: img.url,
+                                  caption: img.filename.replace(/_\d+(\.\w+)$/, '$1').replace(/_/g, ' '),
+                                  category: 'Concerts'
+                                }]);
+                                markDirty();
+                              }}
+                              title={alreadyInGallery ? 'Already in gallery' : `Click to add: ${img.filename}`}
+                            >
+                              <img
+                                src={`http://localhost:3001${img.url}`}
+                                alt={img.filename}
+                                className="w-full aspect-square object-cover"
+                                onError={e => { e.currentTarget.src = resolveImageSrc('picSingingMic'); e.currentTarget.className = 'w-full aspect-square object-contain p-2 opacity-20'; }}
+                              />
+                              {/* Added badge */}
+                              {alreadyInGallery && (
+                                <div className="absolute top-1 right-1 bg-amber-500 rounded-full w-4 h-4 flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-black" />
+                                </div>
+                              )}
+                              {/* Hover overlay */}
+                              {!alreadyInGallery && (
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                                  <Plus className="w-5 h-5 text-white" />
+                                  <span className="text-white text-[10px] font-bold">Add</span>
+                                </div>
+                              )}
+                              {/* Filename tooltip */}
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-0.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-[9px] text-zinc-300 truncate">{img.filename}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

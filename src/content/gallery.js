@@ -6,15 +6,21 @@ import picTshirt from '../assets/gallery/pic_tshirt.png';
 export const galleryContent = [
   {
     id: 1,
-    url: "/uploads/IMG_7563_1794156598182.JPG",
-    caption: "Group Snap with Mrudanga Vidwan Kochi Nannu Master after the recording of Hari Guru Stuthi Album in 1986",
+    url: "/uploads/f9924892-d20d-47eb-b4d6-e5c5f24a80a4_1794367116955.jpg",
+    caption: "With Legendary singer S Janaki in Mangalore on 28/06/2026",
     category: "Concerts"
   },
   {
     id: 2,
-    url: "/uploads/IMG_1619_1794156877100.HEIC",
-    caption: "With Legendary singer  S Janaki in Mangalore",
-    category: "Studio"
+    url: "/uploads/IMG_1619_1794156877100.jpg",
+    caption: "With Legendary singer S Janaki in Mangalore",
+    category: "Concerts"
+  },
+  {
+    id: 10,
+    url: "/uploads/IMG_7563_1794156598182.JPG",
+    caption: "Group Snap with Mrudanga Vidwan Kochi Nannu Master after the recording of Hari Guru Stuthi Album in 1986",
+    category: "Concerts"
   },
   {
     id: 3,
@@ -44,12 +50,6 @@ export const galleryContent = [
     id: 1794157037616,
     url: "/uploads/22fd56ac-329c-4a11-a495-2813e8e95abe_1794157137031.jpg",
     caption: "Blessings from Srimad Samyameendra Therrtha Swamiji, Kashi Mathadhipathi",
-    category: "Concerts"
-  },
-  {
-    id: 1794157177822,
-    url: picSingingMic,
-    caption: "Performance Photo",
     category: "Concerts"
   }
 ];

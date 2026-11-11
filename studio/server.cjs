@@ -421,11 +421,21 @@ import picRedKurta from '../assets/about/pic_red_kurta.png';
 import picTshirt from '../assets/gallery/pic_tshirt.png';\n\n`;
 
   const itemsCode = data.map((item, index) => {
-    let urlVal = `"${item.url}"`;
-    if (item.url === 'picSingingMic') urlVal = `picSingingMic`;
-    else if (item.url === 'picMicBlack') urlVal = `picMicBlack`;
-    else if (item.url === 'picRedKurta') urlVal = `picRedKurta`;
-    else if (item.url === 'picTshirt') urlVal = `picTshirt`;
+    // Automatically resolve HEIC to converted JPEG if the JPEG exists on disk
+    let resolvedUrl = item.url;
+    if (typeof resolvedUrl === 'string' && (resolvedUrl.toLowerCase().endsWith('.heic') || resolvedUrl.toLowerCase().endsWith('.heif'))) {
+      const jpegUrl = resolvedUrl.replace(/\.(heic|heif)$/i, '.jpg');
+      const jpegDiskPath = path.join(UPLOADS_DIR, path.basename(jpegUrl));
+      if (fs.existsSync(jpegDiskPath)) {
+        resolvedUrl = jpegUrl;
+      }
+    }
+
+    let urlVal = `"${resolvedUrl}"`;
+    if (resolvedUrl === 'picSingingMic') urlVal = `picSingingMic`;
+    else if (resolvedUrl === 'picMicBlack') urlVal = `picMicBlack`;
+    else if (resolvedUrl === 'picRedKurta') urlVal = `picRedKurta`;
+    else if (resolvedUrl === 'picTshirt') urlVal = `picTshirt`;
 
     return `  {
     id: ${item.id || index + 1},
@@ -786,6 +796,33 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // 0.5 GET /api/list-uploads — returns all uploaded image files for gallery picker
+    if (pathname === '/api/list-uploads' && req.method === 'GET') {
+      const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.JPG', '.JPEG', '.PNG', '.WEBP']);
+      try {
+        const files = fs.existsSync(UPLOADS_DIR) ? fs.readdirSync(UPLOADS_DIR) : [];
+        const images = files
+          .filter(f => IMAGE_EXTS.has(path.extname(f)))
+          .map(f => {
+            const filePath = path.join(UPLOADS_DIR, f);
+            const stat = fs.statSync(filePath);
+            return {
+              filename: f,
+              url: `/uploads/${f}`,
+              size: stat.size,
+              mtime: stat.mtime.toISOString()
+            };
+          })
+          .sort((a, b) => new Date(b.mtime) - new Date(a.mtime)); // newest first
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, images }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, images: [], error: err.message }));
+      }
+      return;
+    }
+
     // 1. GET /api/git-status
     if (pathname === '/api/git-status' && req.method === 'GET') {
       let branch = 'main';
@@ -1072,6 +1109,32 @@ const server = http.createServer(async (req, res) => {
           }
         } catch (convErr) {
           console.warn('Audio conversion warning:', convErr.message);
+        }
+      }
+
+      // Auto-convert HEIC / HEIF images → JPEG for universal browser compatibility
+      // HEIC is an Apple format; Safari and most browsers cannot display it on the web.
+      if (ext.toLowerCase() === '.heic' || ext.toLowerCase() === '.heif') {
+        const jpegFilename = `${cleanName}_${Date.now()}.jpg`;
+        const jpegSavePath = path.join(UPLOADS_DIR, jpegFilename);
+        let converted = false;
+        try {
+          // macOS built-in sips utility — fast, no extra dependencies needed
+          execSync(`sips -s format jpeg "${savePath}" --out "${jpegSavePath}"`, { cwd: ROOT_DIR });
+          if (fs.existsSync(jpegSavePath)) {
+            try { fs.copyFileSync(jpegSavePath, path.join(distUploadsDir, jpegFilename)); } catch (cErr) {}
+            // Remove the original HEIC (keep only the converted JPEG)
+            try { fs.unlinkSync(savePath); } catch (_) {}
+            filename = jpegFilename;
+            savePath = jpegSavePath;
+            converted = true;
+          }
+        } catch (convErr) {
+          console.warn('HEIC conversion warning (sips not available, keeping original):', convErr.message);
+        }
+        if (!converted) {
+          // Fallback: keep the HEIC file; warn in response
+          console.warn('HEIC could not be converted; serving original HEIC (may not display in all browsers)');
         }
       }
 
