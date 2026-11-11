@@ -254,7 +254,7 @@ export const videosContent = [
     "type": "Short",
     "platform": "YouTube",
     "date": "2026-10-30",
-    "views": "102K views",
+    "views": "103K views",
     "timeAgo": "Recent Short",
     "url": "https://www.youtube.com/shorts/bRoJpLBJRuA",
     "thumbnail": "https://i.ytimg.com/vi/bRoJpLBJRuA/hqdefault.jpg",
